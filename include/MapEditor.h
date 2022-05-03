@@ -3,7 +3,6 @@
 #define OLC_GFX_OPENGL33
 #define OLC_PGEX_DEAR_IMGUI_IMPLEMENTATION
 
-#include <functional>
 #include "imgui_impl_pge.h"
 
 class MapEditor : public olc::PixelGameEngine
@@ -83,7 +82,9 @@ private:
 	int* m_pCellRotationTemp = nullptr;
 	int* i_pTileSelector = nullptr;
 	int* i_pObjectSelector = nullptr;
-
+	
+	int iNewWorldSizeX;
+	int iNewWorldSizeY;
 	int iSelectedTile;
 	int iSelectedObject;
 	int iSelectedCells;
@@ -112,6 +113,7 @@ private:
 	bool bBrushSizeIncr;
 	bool bBrushSizeDecr;
 	bool bFlipped;
+	bool bNewWorldCreation;
 
 public:
 
