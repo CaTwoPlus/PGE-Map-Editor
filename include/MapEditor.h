@@ -74,14 +74,14 @@ private:
 	olc::Sprite* sprIsom;
 	olc::Decal* dclIsom;
 
-	int* m_pWorld = nullptr; // Tiles are the foundation
-	int* m_pWorldTemp = nullptr;
-	int* m_pObjects = nullptr;
-	int* m_pObjectsTemp = nullptr;
-	int* m_pCellRotation = nullptr;
-	int* m_pCellRotationTemp = nullptr;
-	int* i_pTileSelector = nullptr;
-	int* i_pObjectSelector = nullptr;
+	std::vector<int> m_pWorld; // Tiles are the foundation
+	std::vector<int> m_pWorldTemp;
+	std::vector<int> m_pObjects;
+	std::vector<int> m_pObjectsTemp;
+	std::vector<int> m_pCellRotation;
+	std::vector<int> m_pCellRotationTemp;
+	std::vector<int> i_pTileSelector;
+	std::vector<int> i_pObjectSelector;
 	
 	int iNewWorldSizeX;
 	int iNewWorldSizeY;

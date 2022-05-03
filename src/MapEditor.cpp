@@ -85,7 +85,7 @@ bool MapEditor::OnUserCreate()
 	dclIsom = new olc::Decal(sprIsom);
 
 	// Create empty world
-	m_pWorld = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
+	m_pWorld = (long long)vWorldSize.x * vWorldSize.y{ 0 };
 	m_pObjects = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
 
 	// Create empty selector worlds
