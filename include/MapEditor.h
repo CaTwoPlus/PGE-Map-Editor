@@ -3,6 +3,7 @@
 #define OLC_GFX_OPENGL33
 #define OLC_PGEX_DEAR_IMGUI_IMPLEMENTATION
 
+#include <functional>
 #include "imgui_impl_pge.h"
 
 class MapEditor : public olc::PixelGameEngine
@@ -74,17 +75,15 @@ private:
 	olc::Sprite* sprIsom;
 	olc::Decal* dclIsom;
 
-	std::vector<int> m_pWorld; // Tiles are the foundation
-	std::vector<int> m_pWorldTemp;
-	std::vector<int> m_pObjects;
-	std::vector<int> m_pObjectsTemp;
-	std::vector<int> m_pCellRotation;
-	std::vector<int> m_pCellRotationTemp;
-	std::vector<int> i_pTileSelector;
-	std::vector<int> i_pObjectSelector;
-	
-	int iNewWorldSizeX;
-	int iNewWorldSizeY;
+	int* m_pWorld = nullptr; // Tiles are the foundation
+	int* m_pWorldTemp = nullptr;
+	int* m_pObjects = nullptr;
+	int* m_pObjectsTemp = nullptr;
+	int* m_pCellRotation = nullptr;
+	int* m_pCellRotationTemp = nullptr;
+	int* i_pTileSelector = nullptr;
+	int* i_pObjectSelector = nullptr;
+
 	int iSelectedTile;
 	int iSelectedObject;
 	int iSelectedCells;
@@ -113,7 +112,6 @@ private:
 	bool bBrushSizeIncr;
 	bool bBrushSizeDecr;
 	bool bFlipped;
-	bool bNewWorldCreation;
 
 public:
 
