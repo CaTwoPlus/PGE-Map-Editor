@@ -36,8 +36,8 @@ MapEditor::MapEditor() : pge_imgui(true)
 	// Sprite object that holds all imagery
 	sprIsom = nullptr;
 	// Pointer to create 2D world array
-	m_pWorld = nullptr;
-	m_pObjects = nullptr;
+	//m_vWorld = nullptr;
+	//m_vObjects = nullptr;
 	// For storing 2D selector arrays
 	i_pTileSelector = nullptr;
 	i_pObjectSelector = nullptr;
@@ -68,10 +68,6 @@ MapEditor::MapEditor() : pge_imgui(true)
 
 MapEditor::~MapEditor()
 {
-	//delete[] sprIsom; // Got read access violation when terminating the application
-	delete[] m_pWorld;
-	delete[] m_pObjects;
-	delete[] m_pCellRotation;
 	delete[] i_pTileSelector;
 	delete[] i_pObjectSelector;
 }
@@ -83,17 +79,19 @@ bool MapEditor::OnUserCreate()
 
 	// Creates decals, so sprites are loaded onto the GPU for better performance
 	dclIsom = new olc::Decal(sprIsom);
+	// Source image size - Width * Height
+	vImageSize = { 345, 200 };
 
 	// Create empty world
-	m_pWorld = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
-	m_pObjects = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
+	m_vWorld.resize((long long)vWorldSize.x * vWorldSize.y), m_vWorld = { 0 };
+	m_vObjects = m_vWorld;
 
 	// Create empty selector worlds
 	i_pTileSelector = new int[(vTileSelectorSize.x * vTileSelectorSize.y) / (vTileSize.x * vTileSize.y)]{ 0 };
 	i_pObjectSelector = new int[(vTileSelectorSize.x * vTileSelectorSize.y) / (vTileSize.x * vTileSize.y)]{ 0 };
 
 	// Create array to store rotational state of cells 
-	m_pCellRotation = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
+	m_vCellRotation = m_vWorld;
 	
 	// Order of layers: editor (foreground) -> top -> base (background)
 	iLayerEditor = CreateLayer();
@@ -188,14 +186,9 @@ void MapEditor::TileSelector(int vCellX, int vCellY)
 	{
 		++iSelectedTile;
 		if (iSelectedTile > 2)
-		{
 			iSelectedTile = 1;
-		}
 		if (iSelectedTile == 2)
-		{
-			iSelectedTile = 0;
-			*i_pTileSelector = TILE_TYPE_EMPTY;
-		}
+			iSelectedTile = 0, *i_pTileSelector = TILE_TYPE_EMPTY;
 		if (iSelectedTile == 1)
 		{
 			if (vPosTileType1.x == vCellX && vPosTileType1.y == vCellY)
@@ -217,10 +210,7 @@ void MapEditor::TileSelector(int vCellX, int vCellY)
 		if (iSelectedObject > 2)
 			iSelectedObject = 1;
 		if (iSelectedObject == 2)
-		{
-			iSelectedObject = 0;
-			*i_pObjectSelector = OBJ_TYPE_EMPTY;
-		}
+			iSelectedObject = 0, *i_pObjectSelector = OBJ_TYPE_EMPTY;
 		if (iSelectedObject == 1)
 		{
 			if (vPosObjType1.x == vCellX && vPosObjType1.y == vCellY)
@@ -244,40 +234,28 @@ void MapEditor::TileSelector(int vCellX, int vCellY)
 void MapEditor::SaveMapData()
 {
 	std::ofstream MapData;
-
 	MapData.open(sFileData);
-
 	MapData << vWorldSize.x << "\n" << vWorldSize.y << "\n";
-
 	for (int i = 0; i < vWorldSize.x * vWorldSize.y; i++)
-	{
-		MapData << m_pWorld[i] << "\n" << m_pObjects[i] << "\n";
-	}
-
+		MapData << m_vWorld[i] << "\n" << m_vObjects[i] << "\n";
 	MapData.close();
 }
 
 bool MapEditor::LoadMapData()
 {
 	std::ifstream MapData(sFileData, std::ios::in); // add std::ios:binary if map data contains info whether tile is solid or not
-
 	if (MapData.is_open())
 	{
 		MapData >> vWorldSize.x >> vWorldSize.y;
-
-		delete[] m_pWorld;
-		delete[] m_pObjects;
-		delete[] m_pCellRotation;
-
-		m_pWorld = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
-		m_pObjects = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
-		m_pCellRotation = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
-		
-		for (int i = 0; i < vWorldSize.x * vWorldSize.y; i++)
+		m_vWorld.resize((long long)vWorldSize.x * vWorldSize.y), m_vWorld = { 0 };
+		m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y), m_vObjects = { 0 };
+		m_vCellRotation.resize((long long)vWorldSize.x * vWorldSize.y), m_vCellRotation = { 0 };
+		while (!MapData.eof())
 		{
-			MapData >> m_pWorld[i] >> m_pObjects[i];
+			int tempwrld, tempobject;
+			MapData >> tempwrld >> tempobject;
+			m_vWorld.push_back(tempwrld), m_vObjects.push_back(tempobject);
 		}
-	
 		bIsMapLoaded = false;
 		return true;
 	}
@@ -286,11 +264,11 @@ bool MapEditor::LoadMapData()
 
 void MapEditor::DrawFlippedDecal(int WorldSizeIndex_X, int WorldSizeIndex_Y, int32_t vWorld_X, int32_t vWorld_Y, int32_t vCenter_X, int32_t vCenter_Y, float fAngle, float fFlip_X, float fFlip_Y)
 {
-	switch (m_pObjects[WorldSizeIndex_Y * vWorldSize.x + WorldSizeIndex_X])
+	switch (m_vObjects[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
 	{
 	SetDrawTarget(iLayerTop);
 	case OBJ_TYPE_BROWN_ROCK:
-		switch (m_pCellRotation[WorldSizeIndex_Y * vWorldSize.x + WorldSizeIndex_X])
+		switch (m_vCellRotation[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
 		{
 		case 0:
 			//DrawPartialSprite(vWorld_X + (0.25 * vTileSize.x), vWorld.y - (0.25 * vTileSize.y), sprIsom, 0, 3 * vTileSize.y, 0.5 * vTileSize.x, vTileSize.y, 0, fScale_X);
@@ -305,7 +283,7 @@ void MapEditor::DrawFlippedDecal(int WorldSizeIndex_X, int WorldSizeIndex_Y, int
 		}
 		break;
 	case OBJ_TYPE_YELLOW_FLOWERS:
-		switch (m_pCellRotation[WorldSizeIndex_Y * vWorldSize.x + WorldSizeIndex_X])
+		switch (m_vCellRotation[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
 		{
 		case 0:
 			DrawPartialDecal({ ((float)vWorld_X + 0.25f * vTileSize.x), ((float)vWorld_Y - 0.125f * vTileSize.y) }, dclIsom, { (float)1.5f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
@@ -317,7 +295,7 @@ void MapEditor::DrawFlippedDecal(int WorldSizeIndex_X, int WorldSizeIndex_Y, int
 		}
 		break;
 	case OBJ_TYPE_TREE_TRUNK:
-		switch (m_pCellRotation[WorldSizeIndex_Y * vWorldSize.x + WorldSizeIndex_X])
+		switch (m_vCellRotation[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
 		{
 		case 0:
 			DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom, { (float)1.0f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
@@ -334,7 +312,7 @@ void MapEditor::DrawFlippedDecal(int WorldSizeIndex_X, int WorldSizeIndex_Y, int
 		break;
 	}
 
-	switch (m_pWorld[WorldSizeIndex_Y * vWorldSize.x + WorldSizeIndex_X])
+	switch (m_vWorld[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
 	{
 	SetDrawTarget(iLayerBackground);
 	case TILE_TYPE_DIRT:
@@ -439,9 +417,9 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 
 				if (index_x >= 0 && index_x < vWorldSize.x && index_y >= 0 && index_y < vWorldSize.y)
 				{
-					m_pObjects[index_y * vWorldSize.x + index_x] = *i_pObjectSelector;
-					m_pWorld[index_y * vWorldSize.x + index_x] = *i_pTileSelector;
-					m_pCellRotation[index_y * vWorldSize.x + index_x] = bFlipped;
+					m_vObjects[index_y * (long long)vWorldSize.x + index_x] = *i_pObjectSelector;
+					m_vWorld[index_y * (long long)vWorldSize.x + index_x] = *i_pTileSelector;
+					m_vCellRotation[index_y * (long long)vWorldSize.x + index_x] = bFlipped;
 				}
 
 			}
@@ -449,9 +427,9 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 		/*
 		if (vSelected.x >= 0 && vSelected.x < vWorldSize.x && vSelected.x >= 0 && vSelected.y < vWorldSize.y)
 		{
-			m_pObjects[vSelected.y * vWorldSize.x + vSelected.x] = *i_pObjectSelector;
-			m_pWorld[vSelected.y * vWorldSize.x + vSelected.x] = *i_pTileSelector;
-			m_pCellRotation[vSelected.y * vWorldSize.x + vSelected.x] = bFlipped;
+			m_vObjects[vSelected.y * vWorldSize.x + vSelected.x] = *i_pObjectSelector;
+			m_vWorld[vSelected.y * vWorldSize.x + vSelected.x] = *i_pTileSelector;
+			m_vCellRotation[vSelected.y * vWorldSize.x + vSelected.x] = bFlipped;
 		}*/
 	}
 
@@ -523,45 +501,34 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	{
 		GetCursorPos(&pt);
 		ScreenToClient(hwnd, &pt);
-
 		pt.x -= (vSelected.x * 2);
-
 		ClientToScreen(hwnd, &pt);
 		SetCursorPos(pt.x, pt.y);
 	}
-
 	if (col == olc::BLUE) vSelected += {+0, -1};
 	if (GetKey(olc::W).bPressed)
 	{
 		GetCursorPos(&pt);
 		ScreenToClient(hwnd, &pt);
-
 		pt.y -= (vSelected.y * 2);
-
 		ClientToScreen(hwnd, &pt);
 		SetCursorPos(pt.x, pt.y);
 	}
-
 	if (col == olc::GREEN) vSelected += {+0, +1};
 	if (GetKey(olc::S).bPressed)
 	{
 		GetCursorPos(&pt);
 		ScreenToClient(hwnd, &pt);
-
 		pt.y += (vSelected.y * 2);
-
 		ClientToScreen(hwnd, &pt);
 		SetCursorPos(pt.x, pt.y);
 	}
-
 	if (col == olc::YELLOW) vSelected += {+1, +0};
 	if (GetKey(olc::D).bPressed)
 	{
 		GetCursorPos(&pt);
 		ScreenToClient(hwnd, &pt);
-
 		pt.x += (vSelected.y * 2);
-
 		ClientToScreen(hwnd, &pt);
 		SetCursorPos(pt.x, pt.y);
 	}
@@ -586,79 +553,63 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 		};
 	};
 
-
 	// Change world map size on key press
 	if (GetKey(olc::UP).bPressed)
-	{
-		m_pWorldTemp = new int[vWorldSize.x * (long long)++vWorldSize.y]{ 1 };
-		m_pObjectsTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
-		m_pCellRotationTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
-		for (int i = 0; i < vWorldSize.y * vWorldSize.x; i++)
-		{
-			m_pWorldTemp[i] = m_pWorld[i];
-			m_pObjectsTemp[i] = m_pObjects[i];
-			m_pCellRotationTemp[i] = m_pCellRotation[i];
-		}
-		delete[] m_pWorld;
-		m_pWorld = m_pWorldTemp;
-		delete[] m_pObjects;
-		m_pObjects = m_pObjectsTemp;
-		delete[] m_pCellRotation;
-		m_pCellRotation = m_pCellRotationTemp;
-	}
+		m_vWorld.resize((long long)vWorldSize.x * ++vWorldSize.y), m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y), m_vCellRotation.resize((long long)vWorldSize.x * vWorldSize.y);
 	if (GetKey(olc::DOWN).bPressed && (vWorldSize.y > 1)) 
 	{
-		m_pWorldTemp = new int[vWorldSize.x * (long long)--vWorldSize.y]{ 1 };
-		m_pObjectsTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
-		m_pCellRotationTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
+		/*m_vWorldTemp = new int[vWorldSize.x * (long long)--vWorldSize.y]{1};
+		m_vObjectsTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
+		m_vCellRotationTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
 		for (int i = 0; i < vWorldSize.y * vWorldSize.x; i++)
 		{
-			m_pWorldTemp[i] = m_pWorld[i];
-			m_pObjectsTemp[i] = m_pObjects[i];
-			m_pCellRotationTemp[i] = m_pCellRotation[i];
+			m_vWorldTemp[i] = m_vWorld[i];
+			m_vObjectsTemp[i] = m_vObjects[i];
+			m_vCellRotationTemp[i] = m_vCellRotation[i];
 		}
-		delete[] m_pWorld;
-		m_pWorld = m_pWorldTemp;
-		delete[] m_pObjects;
-		m_pObjects = m_pObjectsTemp;
-		delete[] m_pCellRotation;
-		m_pCellRotation = m_pCellRotationTemp;
+		delete[] m_vWorld;
+		m_vWorld = m_vWorldTemp;
+		delete[] m_vObjects;
+		m_vObjects = m_vObjectsTemp;
+		delete[] m_vCellRotation;
+		m_vCellRotation = m_vCellRotationTemp;*/
+
 	}
 	if (GetKey(olc::RIGHT).bPressed)
 	{
-		m_pWorldTemp = new int[(long long)++vWorldSize.x * vWorldSize.y]{ 1 };
-		m_pObjectsTemp = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
-		m_pCellRotationTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
+		/*m_vWorldTemp = new int[(long long)++vWorldSize.x * vWorldSize.y]{1};
+		m_vObjectsTemp = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
+		m_vCellRotationTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
 		for (int i = 0; i < vWorldSize.y * vWorldSize.x; i++)
 		{
-			m_pWorldTemp[i] = m_pWorld[i];
-			m_pObjectsTemp[i] = m_pObjects[i];
-			m_pCellRotationTemp[i] = m_pCellRotation[i];
+			m_vWorldTemp[i] = m_vWorld[i];
+			m_vObjectsTemp[i] = m_vObjects[i];
+			m_vCellRotationTemp[i] = m_vCellRotation[i];
 		}
-		delete[] m_pWorld;
-		m_pWorld = m_pWorldTemp;
-		delete[] m_pObjects;
-		m_pObjects = m_pObjectsTemp;
-		delete[] m_pCellRotation;
-		m_pCellRotation = m_pCellRotationTemp;
+		delete[] m_vWorld;
+		m_vWorld = m_vWorldTemp;
+		delete[] m_vObjects;
+		m_vObjects = m_vObjectsTemp;
+		delete[] m_vCellRotation;
+		m_vCellRotation = m_vCellRotationTemp;*/
 	}
 	if (GetKey(olc::LEFT).bPressed && (vWorldSize.x > 1)) 
 	{
-		m_pWorldTemp = new int[(long long)--vWorldSize.x * vWorldSize.y]{ 1 };
-		m_pObjectsTemp = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
-		m_pCellRotationTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
+		/*m_vWorldTemp = new int[(long long)--vWorldSize.x * vWorldSize.y]{1};
+		m_vObjectsTemp = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
+		m_vCellRotationTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
 		for (int i = 0; i < vWorldSize.y * vWorldSize.x; i++)
 		{
-			m_pWorldTemp[i] = m_pWorld[i];
-			m_pObjectsTemp[i] = m_pObjects[i];
-			m_pCellRotationTemp[i] = m_pCellRotation[i];
+			m_vWorldTemp[i] = m_vWorld[i];
+			m_vObjectsTemp[i] = m_vObjects[i];
+			m_vCellRotationTemp[i] = m_vCellRotation[i];
 		}
-		delete[] m_pWorld;
-		m_pWorld = m_pWorldTemp;
-		delete[] m_pObjects;
-		m_pObjects = m_pObjectsTemp;
-		delete[] m_pCellRotation;
-		m_pCellRotation = m_pCellRotationTemp;
+		delete[] m_vWorld;
+		m_vWorld = m_vWorldTemp;
+		delete[] m_vObjects;
+		m_vObjects = m_vObjectsTemp;
+		delete[] m_vCellRotation;
+		m_vCellRotation = m_vCellRotationTemp;*/
 	}
 
 	// Drag the world map accross the screen 
@@ -669,9 +620,13 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	olc::PixelGameEngine::SetPixelMode(olc::Pixel::MASK);
 
 	// Load map data in or create new map
-	if (bInLoadBoxBounds == true || (bNewWorldCreation && (iNewWorldSizeX != vWorldSize.x || iNewWorldSizeY != vWorldSize.y)))
+	if (bInLoadBoxBounds == true || bNewWorldCreation == true)
 	{
-		vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY;
+		if (bNewWorldCreation && (iNewWorldSizeX != vWorldSize.x || iNewWorldSizeY != vWorldSize.y))
+		{
+			vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY, m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
+			m_vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iSelectedBaseTile);
+		}
 		for (int y = 0; y < vWorldSize.y; y++)
 		{
 			for (int x = 0; x < vWorldSize.x; x++)
@@ -681,7 +636,7 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 
 				for (int n = 0; n < vWorldSize.x * vWorldSize.y; n++) 
 				{
-					switch (m_pObjects[n])
+					switch (m_vObjects[n])
 					{
 					case OBJ_TYPE_BROWN_ROCK:
 						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
@@ -699,8 +654,7 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
 						break;
 					}
-					
-					switch (m_pWorld[n])
+					switch (m_vWorld[n])
 					{
 					case TILE_TYPE_DIRT:
 						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
@@ -721,13 +675,12 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 				}
 			}
 		}
-		bIsMapLoaded = true, bInLoadBoxBounds = false;
+		bIsMapLoaded = true, bInLoadBoxBounds = false, bNewWorldCreation == false;
 	}
 
 	// Main for loop for tile rendering 
 	// (0,0) is at top, defined by vOrigin, so draw from top to bottom
 	// to ensure tiles closest to camera are drawn last
-
 	if (bIsMapLoaded == true)
 	{
 		for (int y = 0; y < vWorldSize.y; y++)
@@ -737,7 +690,6 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 			{
 				// Convert cell coordinate to world space
 				olc::vi2d vWorld = ToScreen(x, y);
-
 				DrawFlippedDecal(x, y, vWorld.x, vWorld.y, vCell.x, vCell.y, fAngle, fFlip_X, fFlip_Y);
 			}
 		}
@@ -820,15 +772,47 @@ void MapEditor::MainMenu()
 
 	if (ImGui::BeginPopupModal("Create new map", NULL, ImGuiWindowFlags_MenuBar))
 	{
-
 		ImGui::InputInt("Size of x axis", &iNewWorldSizeX);
 		ImGui::InputInt("Size of y axis", &iNewWorldSizeY);
+		ImGui::TextWrapped("Choose base tile type:");
+		
+		// UV naming convention: from 0 -> inf; 1st tile is uv0-uv2, 2nd uv1-uv3...
+		// Vector for storing UV coordinates
+		std::vector<ImVec2> UVs;
+		// -1 == uses default padding (style.FramePadding)
+		int frame_padding = -1;
+		// Size of the image we want to make visible
+		ImVec2 size = ImVec2((float)vTileSize.x, (float)vTileSize.y);
 
+		// UV coordinates for starting pixels ([0.0,0.0] is upper-left), i.e. draw FROM
+		ImVec2 uv0 = ImVec2(0.0f, 0.0f); UVs.push_back(uv0);
+		// UV coordinates for tiles in our image file, i.e. draw TO 
+		ImVec2 uv1 = ImVec2((float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv1);
+
+		ImVec2 uv2 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); UVs.push_back(uv2);
+		ImVec2 uv3 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv3);
+
+		ImVec2 uv4 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); UVs.push_back(uv4);
+		ImVec2 uv5 = ImVec2((4.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv5);
+
+		for (int i = 0; i < UVs.size() / 2; i++)
+		{
+			ImGui::PushID(i);
+			if (ImGui::ImageButton((void*)(intptr_t)dclIsom->id, size, UVs[i], UVs[i + 1]));
+			if (i == 0)
+				iSelectedBaseTile = 1;
+			else
+				iSelectedBaseTile = i + 1; // Tile enums start from 0 (empty tile)!
+			ImGui::PopID();
+			ImGui::SameLine();
+		}
+		ImGui::NewLine();
 		if (ImGui::Button("Create"))
 		{
 			ImGui::CloseCurrentPopup();
 			bNewWorldCreation = true;
 		}
+		ImGui::SameLine();
 		if (ImGui::Button("Cancel"))
 			ImGui::CloseCurrentPopup();
 		ImGui::EndPopup();

@@ -38,6 +38,7 @@ public:
 	~MapEditor();
 
 private:
+	olc::vi2d vImageSize;
 	olc::vi2d vWorldSize;
 	olc::vi2d vTileSize;
 	olc::vi2d vOrigin;
@@ -74,17 +75,18 @@ private:
 	olc::Sprite* sprIsom;
 	olc::Decal* dclIsom;
 
-	int* m_pWorld = nullptr; // Tiles are the foundation
-	int* m_pWorldTemp = nullptr;
-	int* m_pObjects = nullptr;
-	int* m_pObjectsTemp = nullptr;
-	int* m_pCellRotation = nullptr;
-	int* m_pCellRotationTemp = nullptr;
-	int* i_pTileSelector = nullptr;
-	int* i_pObjectSelector = nullptr;
+	std::vector<int> m_vWorld; // Tiles are the foundation
+	std::vector<int> m_vWorldTemp;
+	std::vector<int> m_vObjects;
+	std::vector<int> m_vObjectsTemp;
+	std::vector<int> m_vCellRotation;
+	std::vector<int> m_vCellRotationTemp;
+	int* i_pTileSelector;
+	int* i_pObjectSelector;
 	
 	int iNewWorldSizeX;
 	int iNewWorldSizeY;
+	int iSelectedBaseTile;
 	int iSelectedTile;
 	int iSelectedObject;
 	int iSelectedCells;
