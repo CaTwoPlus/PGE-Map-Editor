@@ -11,7 +11,6 @@ MapEditor::MapEditor() : pge_imgui(true)
 
 	// Number of tiles in world
 	vWorldSize = { 5, 5 };
-	iNewWorldSizeX = vWorldSize.x, iNewWorldSizeY = vWorldSize.y;
 	// Size of single tile graphic
 	vTileSize = { 48, 25 };
 
@@ -493,6 +492,22 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 		DrawRect(vSavevSelectedInterfaceCell.x * vTileSize.x, (vSavevSelectedInterfaceCell.y * vTileSize.y) + (ScreenHeight() - (iTileSelectorNumberOfRows * vTileSize.y)), vTileSize.x, vTileSize.y, olc::GREEN);
 	}
 
+	// Is selected tile within save, load box interface area
+	vSaveBoxBoundsY = { 0, 20 }; 
+	vSaveBoxBoundsX = { ScreenWidth() - 40, ScreenWidth() }; 
+	vLoadBoxBoundsY = { 20, 40 }; 
+	vLoadBoxBoundsX = { ScreenWidth() - 40, ScreenWidth() }; 
+
+	if (vMouse.x >= vSaveBoxBoundsX.x && vMouse.x <= vSaveBoxBoundsX.y && vMouse.y >= vSaveBoxBoundsY.x && vMouse.y <= vSaveBoxBoundsY.y)
+		bInSaveBoxBounds = true;
+	else
+		bInSaveBoxBounds = false;
+
+	if (vMouse.x >= vLoadBoxBoundsX.x && vMouse.x <= vLoadBoxBoundsX.y && vMouse.y >= vLoadBoxBoundsY.x && vMouse.y <= vLoadBoxBoundsY.y)
+		bInLoadBoxBounds = true;
+	else
+		bInLoadBoxBounds = false;
+
 	// "Bodge" selected cell by sampling corners
 	// Must be before selection from tile selector interface is assigned, otherwise tiles will not be painted in rhombic shape
 	// https://docs.microsoft.com/en-us/windows/win32/menurc/using-cursors#using-the-keyboard-to-move-the-cursor
@@ -613,8 +628,10 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	}
 
 	// Drag the world map accross the screen 
-	if (GetMouse(1).bHeld && bInWorldBounds == false && bInTileSelectorBounds == false)
+	if (GetMouse(1).bHeld && bInWorldBounds == false && bInLoadBoxBounds == false && bInSaveBoxBounds == false && bInTileSelectorBounds == false)
+	{
 		vOrigin = vCell;
+	}
 
 	// Draw World - has binary transperancy so enable masking
 	olc::PixelGameEngine::SetPixelMode(olc::Pixel::MASK);
@@ -693,6 +710,10 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 				DrawFlippedDecal(x, y, vWorld.x, vWorld.y, vCell.x, vCell.y, fAngle, fFlip_X, fFlip_Y);
 			}
 		}
+
+		// Save map data
+		if (bInSaveBoxBounds == true && GetMouse(0).bPressed)
+			SaveMapData();
 	}
 		
 	// Draw Selected Cell - Has varying alpha components
@@ -708,8 +729,10 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 
 	// Draw "highlight" tile
 	if (bInWorldBounds == true)
+	{
 		//DrawPartialSprite(vSelectedWorld.x, vSelectedWorld.y, sprIsom, 1 * vTileSize.x, vTileSize.y, vTileSize.x, vTileSize.y, iSelectedCells);
 		DrawPartialDecal({ (float)vSelectedWorld.x, (float)vSelectedWorld.y }, dclIsom, { (float)1 * vTileSize.x, (float)vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y }, { (float)iSelectedCells, (float)iSelectedCells });
+	}
 		
 	// Draw box for save function
 	DrawRect(ScreenWidth() - 40, 0, 40, 20, olc::BLACK);
@@ -731,23 +754,20 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	DrawString(4, 64, "iSelectedTile: " + std::to_string(iSelectedTile) + ", iSelectedObject: " + std::to_string(iSelectedObject) , olc::BLACK);
 	DrawString(4, 74, "vObjectSelectorOrigin: " + std::to_string(vObjectSelectorOrigin.x) + ";" + std::to_string(vObjectSelectorOrigin.y), olc::BLACK);
 
-	// Do ImGui stuff here.
-	ImGui::ShowDemoWindow();
+	// Do ImGui stuff here. Lambas are needed for the sake of recursion.   
 	MainMenu();
+	FileMenu();
 
 	return true;
 }
 
 void MapEditor::MainMenu()
 {
-	bNewWorldCreation = false;
 	if (ImGui::BeginMainMenuBar())
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::MenuItem("New map"))
-				bNewWorldCreation = true;
-			FileMenu();
+			MainMenu();
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Edit"))
@@ -821,6 +841,7 @@ void MapEditor::MainMenu()
 
 void MapEditor::FileMenu()
 {
+	if (ImGui::MenuItem("New")) {}
 	if (ImGui::MenuItem("Open", "Ctrl+O")) { bInLoadBoxBounds = true, LoadMapData(); }
 	if (ImGui::BeginMenu("Open Recent"))
 	{
@@ -840,7 +861,8 @@ void MapEditor::FileMenu()
 		}
 		ImGui::EndMenu();
 	}
-	if (ImGui::MenuItem("Save", "Ctrl+S")) { SaveMapData(); }
+	if (ImGui::MenuItem("Save", "Ctrl+S")) {}
+	if (ImGui::MenuItem("Save As..")) {}
 }
 
 void MapEditor::DrawUI(void) 
