@@ -39,7 +39,6 @@ public:
 	~MapEditor();
 
 private:
-	olc::vi2d vImageSize;
 	olc::vi2d vWorldSize;
 	olc::vi2d vTileSize;
 	olc::vi2d vOrigin;
