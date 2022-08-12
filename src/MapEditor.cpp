@@ -82,8 +82,8 @@ bool MapEditor::OnUserCreate()
 	vImageSize = { 345, 200 };
 
 	// Create empty world
-	m_vWorld.resize((long long)vWorldSize.x * vWorldSize.y), m_vWorld = { 0 };
-	m_vObjects = m_vWorld;
+	m_pWorld = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
+	m_pObjects = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
 
 	// Create empty selector worlds
 	i_pTileSelector = new int[(vTileSelectorSize.x * vTileSelectorSize.y) / (vTileSize.x * vTileSize.y)]{ 0 };
@@ -637,9 +637,17 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	olc::PixelGameEngine::SetPixelMode(olc::Pixel::MASK);
 
 	// Load map data in or create new map
-	if (bInLoadBoxBounds == true || bNewWorldCreation == true)
+	if (bInLoadBoxBounds == true || (bNewWorldCreation && (iNewWorldSizeX != vWorldSize.x || iNewWorldSizeY != vWorldSize.y)))
 	{
-		if (bNewWorldCreation && (iNewWorldSizeX != vWorldSize.x || iNewWorldSizeY != vWorldSize.y))
+		vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY;
+		{
+			vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY, m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
+			m_vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iSelectedBaseTile);
+		}
+		{
+			vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY, m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
+			m_vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iSelectedBaseTile);
+		}
 		{
 			vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY, m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
 			m_vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iSelectedBaseTile);
@@ -770,17 +778,40 @@ void MapEditor::MainMenu()
 			MainMenu();
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("Edit"))
+
+	if (bNewWorldCreation)
+		ImGui::OpenPopup("Create new map");
+
+	// Always center this window when appearing
+	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+	if (ImGui::BeginPopupModal("Create new map", NULL, ImGuiWindowFlags_MenuBar))
+	{
+
+		ImGui::InputInt("Size of x axis", &iNewWorldSizeX);
+		ImGui::InputInt("Size of y axis", &iNewWorldSizeY);
+
+		if (ImGui::Button("Create"))
 		{
-			if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
-			if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
-			ImGui::Separator();
-			if (ImGui::MenuItem("Cut", "CTRL+X")) {}
-			if (ImGui::MenuItem("Copy", "CTRL+C")) {}
-			if (ImGui::MenuItem("Paste", "CTRL+V")) {}
-			ImGui::EndMenu();
+			ImGui::CloseCurrentPopup();
+			bNewWorldCreation = true;
 		}
-		ImGui::EndMainMenuBar();
+		if (ImGui::Button("Cancel"))
+			ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
+	}
+		}
+		ImGui::NewLine();
+		if (ImGui::Button("Create"))
+		{
+			ImGui::CloseCurrentPopup();
+			bNewWorldCreation = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel"))
+			ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
 	}
 
 	if (bNewWorldCreation)
