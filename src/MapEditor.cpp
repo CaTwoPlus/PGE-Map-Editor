@@ -1,7 +1,7 @@
 #define OLC_PGE_APPLICATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-
 #include "MapEditor.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 //#include "stb_image_write.h"
 
 // Override base class with your custom functionality
@@ -74,6 +74,8 @@ MapEditor::~MapEditor()
 
 bool MapEditor::OnUserCreate()
 {
+	tv = olc::TileTransformedView({ ScreenWidth(), ScreenHeight() }, {1, 1});
+
 	// Load sprites 
 	sprIsom = new olc::Sprite("./sprites/tiles.png");
 
@@ -89,6 +91,7 @@ bool MapEditor::OnUserCreate()
 	// Create empty selector worlds
 	i_pTileSelector = new int[(vTileSelectorSize.x * vTileSelectorSize.y) / (vTileSize.x * vTileSize.y)]{ 0 };
 	i_pObjectSelector = new int[(vTileSelectorSize.x * vTileSelectorSize.y) / (vTileSize.x * vTileSize.y)]{ 0 };
+	bOpen = true;
 
 	// Create array to store rotational state of cells 
 	m_vCellRotation = m_vWorld;
@@ -130,57 +133,57 @@ void MapEditor::TileSelector(int vCellX, int vCellY)
 	//DrawRect(0 + (vTileSize.x * iTileSelectorNumberOfColumns) + vTileSize.x, ScreenHeight() - (iTileSelectorNumberOfRows * vTileSize.y),
 	//vTileSize.x* iObjectSelectorNumberOfColumns, ScreenHeight(), olc::BLACK);
 
-	// Brown rock 
-	DrawPartialDecal({ static_cast<float>(vObjectSelectorFrameX.x), static_cast<float>(vObjectSelectorFrameY.x) }, dclIsom,
+	/*// Brown rock 
+	tv.DrawPartialDecal({ static_cast<float>(vObjectSelectorFrameX.x), static_cast<float>(vObjectSelectorFrameY.x) }, dclIsom,
 		{ (float)0.0f, (float)5.28f * vTileSize.y }, { (float)1.0f * vTileSize.x, (float)vTileSize.y }, { 1.0f, 1.0f });
 	vPosObjType1.x = iTileSelectorNumberOfColumns + 1;
 	vPosObjType1.y = ((ScreenHeight() / vTileSize.y) - 1) - (iObjectSelectorNumberOfRows - 1);
 	// Yellow flowers
-	DrawPartialDecal({ static_cast<float>((vObjectSelectorFrameX.x + vTileSize.x)), static_cast<float>(vObjectSelectorFrameY.x) }, dclIsom,
+	tv.DrawPartialDecal({ static_cast<float>((vObjectSelectorFrameX.x + vTileSize.x)), static_cast<float>(vObjectSelectorFrameY.x) }, dclIsom,
 		{ (float)1.5f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
 	vPosObjType2.x = iTileSelectorNumberOfColumns + 2;
 	vPosObjType2.y = ((ScreenHeight() / vTileSize.y) - 1) - (iObjectSelectorNumberOfRows - 1);
 	// Tree trunk
-	DrawPartialDecal({ static_cast<float>((vObjectSelectorFrameX.x + 2 * vTileSize.x)), static_cast<float>(vObjectSelectorFrameY.x) }, dclIsom,
+	tv.DrawPartialDecal({ static_cast<float>((vObjectSelectorFrameX.x + 2 * vTileSize.x)), static_cast<float>(vObjectSelectorFrameY.x) }, dclIsom,
 		{ (float)1.0f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
 	vPosObjType3.x = iTileSelectorNumberOfColumns + 3;
 	vPosObjType3.y = ((ScreenHeight() / vTileSize.y) - 1) - (iObjectSelectorNumberOfRows - 1);
 	// Signpost 
-	DrawPartialDecal({ static_cast<float>(vObjectSelectorFrameX.x + 3 * vTileSize.x), static_cast<float>(vObjectSelectorFrameY.x) }, dclIsom,
+	tv.DrawPartialDecal({ static_cast<float>(vObjectSelectorFrameX.x + 3 * vTileSize.x), static_cast<float>(vObjectSelectorFrameY.x) }, dclIsom,
 		{ (float)0.5f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
 	vPosObjType4.x = iTileSelectorNumberOfColumns + 4;
 	vPosObjType4.y = ((ScreenHeight() / vTileSize.y) - 1) - (iObjectSelectorNumberOfRows - 1);
 	// Tree  
-	DrawPartialDecal({ static_cast<float>((vObjectSelectorFrameX.x + 4 * vTileSize.x)), static_cast<float>(vObjectSelectorFrameY.x) }, dclIsom,
+	tv.DrawPartialDecal({ static_cast<float>((vObjectSelectorFrameX.x + 4 * vTileSize.x)), static_cast<float>(vObjectSelectorFrameY.x) }, dclIsom,
 		{ (float)2.0f * vTileSize.x, (float)vTileSize.y }, { (float)vTileSize.x, (float)3.0f * vTileSize.y }, { 1.0f, 0.7f });
 	vPosObjType5.x = iTileSelectorNumberOfColumns + 5;
 	vPosObjType5.y = ((ScreenHeight() / vTileSize.y) - 1) - (iObjectSelectorNumberOfRows - 1);
 
 	// Dirt tile 
-	DrawPartialDecal({ static_cast<float>(vTileSelectorFrameX.x), static_cast<float>(vTileSelectorFrameY.x) }, dclIsom,
+	tv.DrawPartialDecal({ static_cast<float>(vTileSelectorFrameX.x), static_cast<float>(vTileSelectorFrameY.x) }, dclIsom,
 		{ (float)0.0f, (float)0.0f }, { (float)vTileSize.x, (float)vTileSize.y });
 	vPosTileType1.x = 0;
 	vPosTileType1.y = ((ScreenHeight() / vTileSize.y) - 1) - (iTileSelectorNumberOfRows - 1);
 	// Grass tile
-	DrawPartialDecal({ static_cast<float>(vTileSelectorFrameX.x + vTileSize.x), static_cast<float>(vTileSelectorFrameY.x) }, dclIsom,
+	tv.DrawPartialDecal({ static_cast<float>(vTileSelectorFrameX.x + vTileSize.x), static_cast<float>(vTileSelectorFrameY.x) }, dclIsom,
 		{ (float)vTileSize.x, (float)0.0f }, { (float)vTileSize.x, (float)vTileSize.y });
 	vPosTileType2.x = 1;
 	vPosTileType2.y = ((ScreenHeight() / vTileSize.y) - 1) - (iTileSelectorNumberOfRows - 1);
 	// Long grass
-	DrawPartialDecal({ static_cast<float>(vTileSelectorFrameX.x + vTileSize.x), static_cast<float>(vTileSelectorFrameY.x + vTileSize.y) }, dclIsom,
+	tv.DrawPartialDecal({ static_cast<float>(vTileSelectorFrameX.x + vTileSize.x), static_cast<float>(vTileSelectorFrameY.x + vTileSize.y) }, dclIsom,
 		{ (float)vTileSize.x, (float)2.0f * vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y });
 	vPosTileType3.x = 1;
 	vPosTileType3.y = ((ScreenHeight() / vTileSize.y) - 1) - (iTileSelectorNumberOfRows - 2);
 	// Water tile
-	DrawPartialDecal({ static_cast<float>((vTileSelectorFrameX.x + 2 * vTileSize.x)), static_cast<float>(vTileSelectorFrameY.x) }, dclIsom,
+	tv.DrawPartialDecal({ static_cast<float>((vTileSelectorFrameX.x + 2 * vTileSize.x)), static_cast<float>(vTileSelectorFrameY.x) }, dclIsom,
 		{ (float)0.0f, (float)vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y });
 	vPosTileType4.x = 2;
 	vPosTileType4.y = ((ScreenHeight() / vTileSize.y) - 1) - (iTileSelectorNumberOfRows - 1);
 	// Stone tile
-	DrawPartialDecal({ static_cast<float>((vTileSelectorFrameX.x + 3 * vTileSize.x)), static_cast<float>(vTileSelectorFrameY.x) }, dclIsom,
+	tv.DrawPartialDecal({ static_cast<float>((vTileSelectorFrameX.x + 3 * vTileSize.x)), static_cast<float>(vTileSelectorFrameY.x) }, dclIsom,
 		{ (float)2.0f * vTileSize.x, (float)0.0f }, { (float)vTileSize.x, (float)vTileSize.y });
 	vPosTileType5.x = 3;
-	vPosTileType5.y = ((ScreenHeight() / vTileSize.y) - 1) - (iTileSelectorNumberOfRows - 1);
+	vPosTileType5.y = ((ScreenHeight() / vTileSize.y) - 1) - (iTileSelectorNumberOfRows - 1);*/
 
 	if (GetMouse(0).bPressed && bInTileSelectorBounds == true)
 	{
@@ -272,12 +275,12 @@ void MapEditor::DrawFlippedDecal(int WorldSizeIndex_X, int WorldSizeIndex_Y, int
 		{
 		case 0:
 			//DrawPartialSprite(vWorld_X + (0.25 * vTileSize.x), vWorld.y - (0.25 * vTileSize.y), sprIsom, 0, 3 * vTileSize.y, 0.5 * vTileSize.x, vTileSize.y, 0, fScale_X);
-			DrawPartialDecal({ (float)vWorld_X,  (float)vWorld_Y}, dclIsom, { 0.0f, (float)5.24f * vTileSize.y }, { (float)vTileSize.x, (float)(1.24f * vTileSize.y) });
+			tv.DrawPartialDecal({ (float)vWorld_X,  (float)vWorld_Y}, dclIsom, { 0.0f, (float)5.24f * vTileSize.y }, { (float)vTileSize.x, (float)(1.24f * vTileSize.y) });
 			break;
-
+			
 		case 1:
 			fFlip_X = -0.9f;
-			DrawPartialDecal({ (float)vWorld_X + (float)(0.25 * vTileSize.x),  (float)vWorld_Y - (float)(0.25 * vTileSize.y) }, dclIsom,
+			tv.DrawPartialDecal({ (float)vWorld_X + (float)(0.25 * vTileSize.x),  (float)vWorld_Y - (float)(0.25 * vTileSize.y) }, dclIsom,
 				{ 0.0f, (float)5.0f * vTileSize.y }, { (float)vTileSize.x, (float)(1.24f * vTileSize.y) }, { fFlip_X, fFlip_Y });
 			break;
 		}
@@ -286,11 +289,11 @@ void MapEditor::DrawFlippedDecal(int WorldSizeIndex_X, int WorldSizeIndex_Y, int
 		switch (m_vCellRotation[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
 		{
 		case 0:
-			DrawPartialDecal({ ((float)vWorld_X + 0.25f * vTileSize.x), ((float)vWorld_Y - 0.125f * vTileSize.y) }, dclIsom, { (float)1.5f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
+			tv.DrawPartialDecal({ ((float)vWorld_X + 0.25f * vTileSize.x), ((float)vWorld_Y - 0.125f * vTileSize.y) }, dclIsom, { (float)1.5f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
 			break;
 		case 1:
 			fFlip_X = -0.9f;
-			DrawPartialDecal({ ((float)vWorld_X + 0.25f * vTileSize.x), ((float)vWorld_Y + 0.5f * vTileSize.y) }, dclIsom, { (float)1.5f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y }, { fFlip_X, fFlip_Y });
+			tv.DrawPartialDecal({ ((float)vWorld_X + 0.25f * vTileSize.x), ((float)vWorld_Y + 0.5f * vTileSize.y) }, dclIsom, { (float)1.5f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y }, { fFlip_X, fFlip_Y });
 			break;
 		}
 		break;
@@ -298,16 +301,16 @@ void MapEditor::DrawFlippedDecal(int WorldSizeIndex_X, int WorldSizeIndex_Y, int
 		switch (m_vCellRotation[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
 		{
 		case 0:
-			DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom, { (float)1.0f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
+			tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom, { (float)1.0f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
 			break;
 		case 1:
 			fFlip_X = -0.9f;
-			DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom, { (float)1.0f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y }, { fFlip_X, fFlip_Y });
+			tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom, { (float)1.0f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y }, { fFlip_X, fFlip_Y });
 			break;
 		}
 		break;
 	case OBJ_TYPE_TREE:
-		DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y - ((float)2 * vTileSize.y) }, dclIsom,
+		tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y - ((float)2 * vTileSize.y) }, dclIsom,
 			{ (float)2 * vTileSize.x, (float)vTileSize.y }, { (float)vTileSize.x, (float)3 * vTileSize.y });
 		break;
 	}
@@ -316,23 +319,23 @@ void MapEditor::DrawFlippedDecal(int WorldSizeIndex_X, int WorldSizeIndex_Y, int
 	{
 	SetDrawTarget(iLayerBackground);
 	case TILE_TYPE_DIRT:
-		DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
+		tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
 			{ 0, 0 }, { (float)vTileSize.x, (float)vTileSize.y });
 		break;
 	case TILE_TYPE_GRASS:
-		DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
+		tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
 			{ (float)vTileSize.x, 0 }, { (float)vTileSize.x, (float)vTileSize.y });
 		break;
 	case TILE_TYPE_LONG_GRASS:
-		DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
+		tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
 			{ (float)vTileSize.x, (float)2 * vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y });
 		break;
 	case TILE_TYPE_WATER:
-		DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
+		tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
 			{ 0, (float)vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y });
 		break;
 	case TILE_TYPE_STONE:
-		DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
+		tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
 			{ (float)2 * vTileSize.x, 0 }, { (float)vTileSize.x, (float)vTileSize.y });
 		break;
 	}
@@ -341,12 +344,19 @@ void MapEditor::DrawFlippedDecal(int WorldSizeIndex_X, int WorldSizeIndex_Y, int
 //Main loop//
 bool MapEditor::OnUserUpdate(float fElapsedTime)
 {
+	// Handle pan & zoom
+	if (GetMouse(2).bPressed) tv.StartPan(GetMousePos());
+	if (GetMouse(2).bHeld) tv.UpdatePan(GetMousePos());
+	if (GetMouse(2).bReleased) tv.EndPan(GetMousePos());
+	if (GetKey(olc::PGDN).bPressed) tv.ZoomAtScreenPos(2.0f, GetMousePos());
+	if (GetKey(olc::PGUP).bPressed) tv.ZoomAtScreenPos(0.5f, GetMousePos());
+
 	SetDrawTarget(iLayerEditor);
 	Clear(olc::WHITE);
 
 	POINT pt;
 	RECT rc;
-	
+
 	if (GetMouseWheel() > 1) // Now just have implement how many cells are selected with each change of iSelectedCells's value
 	{
 		++iSelectedCells;
@@ -441,6 +451,7 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 // | Interface																	  |
 // O------------------------------------------------------------------------------O
 
+	/*
 	// Draw tile selector interface (black rectangle) 
 	DrawRect(0, ScreenHeight() - (iTileSelectorNumberOfRows * vTileSize.y), vTileSize.x * iTileSelectorNumberOfColumns, ScreenHeight(), olc::BLACK);
 
@@ -470,8 +481,9 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	if (vSelected.x >= 0 && vSelected.x < vWorldSize.x && vSelected.y >= 0 && vSelected.y < vWorldSize.y)
 		bInWorldBounds = true;
 	else
-		bInWorldBounds = false;
+		bInWorldBounds = false;*/
 
+	/*
 	// Are we within tile selector bounds?
 	if (vMouse.x < vTileSelectorFrameX.y && vMouse.y >= vTileSelectorFrameY.x)
 		bInTileSelectorBounds = true;
@@ -480,8 +492,9 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	if (vMouse.x > vObjectSelectorFrameX.x && vMouse.x <= (vObjectSelectorFrameX.x + vObjectSelectorFrameX.y) && vMouse.y >= vObjectSelectorFrameY.x)
 		bInObjectSelectorBounds = true;
 	else
-		bInObjectSelectorBounds = false;
+		bInObjectSelectorBounds = false;*/
 	
+	/*
 	// Draw red rectangle within selector interface 
 	if (bInTileSelectorBounds == true)
 		DrawRect(vSelectedInterfaceCell.x * vTileSize.x, (vSelectedInterfaceCell.y * vTileSize.y) + (ScreenHeight() - (iTileSelectorNumberOfRows * vTileSize.y)), vTileSize.x, vTileSize.y, olc::RED);
@@ -491,7 +504,7 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	{
 		olc::vi2d vSavevSelectedInterfaceCell = { vSelectedInterfaceCell.x,  vSelectedInterfaceCell.y };
 		DrawRect(vSavevSelectedInterfaceCell.x * vTileSize.x, (vSavevSelectedInterfaceCell.y * vTileSize.y) + (ScreenHeight() - (iTileSelectorNumberOfRows * vTileSize.y)), vTileSize.x, vTileSize.y, olc::GREEN);
-	}
+	}*/
 
 	// "Bodge" selected cell by sampling corners
 	// Must be before selection from tile selector interface is assigned, otherwise tiles will not be painted in rhombic shape
@@ -544,82 +557,53 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	};
 
 	// For tile selector interface coordinate conversion 
-	auto InterfaceToScreenTiles = [&](int x, int y)
+	/*auto InterfaceToScreenTiles = [&](int x, int y)
 	{
 		return olc::vi2d	
 		{
 			(vTileSelectorOrigin.x * vTileSize.x) + (x - y) * (vTileSize.x / 2),
 			(vTileSelectorOrigin.y * vTileSize.y) + (x + y) * (vTileSize.y / 2)
 		};
-	};
+	};*/
 
 	// Change world map size on key press
 	if (GetKey(olc::UP).bPressed)
-		m_vWorld.resize((long long)vWorldSize.x * ++vWorldSize.y), m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y), m_vCellRotation.resize((long long)vWorldSize.x * vWorldSize.y);
-	if (GetKey(olc::DOWN).bPressed && (vWorldSize.y > 1)) 
+	{	
+		int iCurrentTile = m_vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = m_vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
+		++vWorldSize.y;
+		for (int i = 0; i < vWorldSize.x; i++) m_vWorld.push_back(iCurrentTile), m_vObjects.push_back(0), m_vCellRotation.push_back(iCurrentRotation);
+	}
+	if (GetKey(olc::DOWN).bPressed && (vWorldSize.y > 1))
 	{
-		/*m_vWorldTemp = new int[vWorldSize.x * (long long)--vWorldSize.y]{1};
-		m_vObjectsTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
-		m_vCellRotationTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
-		for (int i = 0; i < vWorldSize.y * vWorldSize.x; i++)
-		{
-			m_vWorldTemp[i] = m_vWorld[i];
-			m_vObjectsTemp[i] = m_vObjects[i];
-			m_vCellRotationTemp[i] = m_vCellRotation[i];
-		}
-		delete[] m_vWorld;
-		m_vWorld = m_vWorldTemp;
-		delete[] m_vObjects;
-		m_vObjects = m_vObjectsTemp;
-		delete[] m_vCellRotation;
-		m_vCellRotation = m_vCellRotationTemp;*/
-
+		int iCurrentTile = m_vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = m_vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
+		--vWorldSize.y;
+		for (int i = 0; i < vWorldSize.x; i++) m_vWorld.push_back(iCurrentTile), m_vObjects.push_back(0), m_vCellRotation.push_back(iCurrentRotation);
 	}
 	if (GetKey(olc::RIGHT).bPressed)
 	{
-		/*m_vWorldTemp = new int[(long long)++vWorldSize.x * vWorldSize.y]{1};
-		m_vObjectsTemp = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
-		m_vCellRotationTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
-		for (int i = 0; i < vWorldSize.y * vWorldSize.x; i++)
-		{
-			m_vWorldTemp[i] = m_vWorld[i];
-			m_vObjectsTemp[i] = m_vObjects[i];
-			m_vCellRotationTemp[i] = m_vCellRotation[i];
-		}
-		delete[] m_vWorld;
-		m_vWorld = m_vWorldTemp;
-		delete[] m_vObjects;
-		m_vObjects = m_vObjectsTemp;
-		delete[] m_vCellRotation;
-		m_vCellRotation = m_vCellRotationTemp;*/
+		int iCurrentTile = m_vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = m_vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
+		++vWorldSize.x;
+		for (int i = 0; i < vWorldSize.y; i++) m_vWorld.push_back(iCurrentTile), m_vObjects.push_back(0), m_vCellRotation.push_back(iCurrentRotation);
 	}
-	if (GetKey(olc::LEFT).bPressed && (vWorldSize.x > 1)) 
+	if (GetKey(olc::LEFT).bPressed && (vWorldSize.x > 1))
 	{
-		/*m_vWorldTemp = new int[(long long)--vWorldSize.x * vWorldSize.y]{1};
-		m_vObjectsTemp = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
-		m_vCellRotationTemp = new int[vWorldSize.x * (long long)vWorldSize.y]{ 0 };
-		for (int i = 0; i < vWorldSize.y * vWorldSize.x; i++)
-		{
-			m_vWorldTemp[i] = m_vWorld[i];
-			m_vObjectsTemp[i] = m_vObjects[i];
-			m_vCellRotationTemp[i] = m_vCellRotation[i];
-		}
-		delete[] m_vWorld;
-		m_vWorld = m_vWorldTemp;
-		delete[] m_vObjects;
-		m_vObjects = m_vObjectsTemp;
-		delete[] m_vCellRotation;
-		m_vCellRotation = m_vCellRotationTemp;*/
+		int iCurrentTile = m_vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = m_vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
+		--vWorldSize.x;
+		for (int i = 0; i < vWorldSize.y; i++) m_vWorld.push_back(iCurrentTile), m_vObjects.push_back(0), m_vCellRotation.push_back(iCurrentRotation);
 	}
 
 	// Drag the world map accross the screen 
-	if (GetMouse(1).bHeld && bInWorldBounds == false && bInTileSelectorBounds == false)
-		vOrigin = vCell;
+	//if (GetMouse(1).bHeld && bInWorldBounds == false && bInTileSelectorBounds == false)
+		//vOrigin = vCell;
 
 	// Draw World - has binary transperancy so enable masking
 	olc::PixelGameEngine::SetPixelMode(olc::Pixel::MASK);
 
 	// Load map data in or create new map
+	olc::vi2d vTL = tv.GetTopLeftTile().max({ 0,0 });
+	olc::vi2d vBR = tv.GetBottomRightTile().min(vWorldSize);
+	olc::vi2d vTile;
+	
 	if (bInLoadBoxBounds == true || bNewWorldCreation == true)
 	{
 		if (bNewWorldCreation && (iNewWorldSizeX != vWorldSize.x || iNewWorldSizeY != vWorldSize.y))
@@ -627,49 +611,50 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 			vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY, m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
 			m_vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iSelectedBaseTile);
 		}
+
 		for (int y = 0; y < vWorldSize.y; y++)
 		{
 			for (int x = 0; x < vWorldSize.x; x++)
 			{
 				// Convert cell coordinate to world space
-				olc::vi2d vWorld = ToScreen(x, y);
-
+				olc::vi2d vWorld = ToScreen(vCell.x, vCell.y);
+				
 				for (int n = 0; n < vWorldSize.x * vWorldSize.y; n++) 
 				{
 					switch (m_vObjects[n])
 					{
 					case OBJ_TYPE_BROWN_ROCK:
-						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
 						break;
 					case OBJ_TYPE_YELLOW_FLOWERS:
-						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
 						break;
 					case OBJ_TYPE_TREE_TRUNK:
-						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
 						break;
 					case OBJ_TYPE_TREE:
-						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
 						break;
 					case OBJ_TYPE_SIGNPOST:
-						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
 						break;
 					}
 					switch (m_vWorld[n])
 					{
 					case TILE_TYPE_DIRT:
-						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
 						break;
 					case TILE_TYPE_GRASS:
-						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
 						break;
 					case TILE_TYPE_LONG_GRASS:
-						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
 						break;
 					case TILE_TYPE_WATER:
-						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
 						break;
 					case TILE_TYPE_STONE:
-						DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
 						break;
 					}
 				}
@@ -701,40 +686,100 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	// Convert selected cell coordinate to world space
 	olc::vi2d vSelectedWorld = ToScreen(vSelected.x, vSelected.y);
 	// Convert selector interface cell coordinate to world space
-	olc::vi2d vSelectedInterfaceAreaTiles = InterfaceToScreenTiles(vSelectedInterfaceCell.x, vSelectedInterfaceCell.y);
+	//olc::vi2d vSelectedInterfaceAreaTiles = InterfaceToScreenTiles(vSelectedInterfaceCell.x, vSelectedInterfaceCell.y);
 
 	// Draw tile selection
-	TileSelector(vCell.x, vCell.y);
+	//TileSelector(vCell.x, vCell.y);
 
 	// Draw "highlight" tile
 	if (bInWorldBounds == true)
 		//DrawPartialSprite(vSelectedWorld.x, vSelectedWorld.y, sprIsom, 1 * vTileSize.x, vTileSize.y, vTileSize.x, vTileSize.y, iSelectedCells);
-		DrawPartialDecal({ (float)vSelectedWorld.x, (float)vSelectedWorld.y }, dclIsom, { (float)1 * vTileSize.x, (float)vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y }, { (float)iSelectedCells, (float)iSelectedCells });
-		
+		tv.DrawPartialDecal({ (float)vSelectedWorld.x, (float)vSelectedWorld.y }, dclIsom, { (float)1 * vTileSize.x, (float)vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y }, { (float)iSelectedCells, (float)iSelectedCells });
+	
+	
 	// Draw box for save function
 	DrawRect(ScreenWidth() - 40, 0, 40, 20, olc::BLACK);
 	DrawRect(ScreenWidth() - 40, 20, 40, 20, olc::BLACK);
-
 	// Go back to normal drawing with no expected transparency
 	SetPixelMode(olc::Pixel::NORMAL);
-
 	// Draw write to png save string 
 	DrawString(ScreenWidth() - 35, ScreenHeight() - (ScreenHeight() - 7), "Save", olc::BLACK);
 	DrawString(ScreenWidth() - 35, ScreenHeight() - (ScreenHeight() - 27), "Load", olc::BLACK);
-
 	// Draw Debug Info - '+' here is operator overloading (string concatenation) 
 	DrawString(4, 4, "Mouse   : " + std::to_string(vMouse.x) + ", " + std::to_string(vMouse.y), olc::BLACK);
 	DrawString(4, 14, "Cell    : " + std::to_string(vCell.x) + ", " + std::to_string(vCell.y), olc::BLACK);
 	DrawString(4, 24, "Selected: " + std::to_string(vSelected.x) + ", " + std::to_string(vSelected.y), olc::BLACK);
 	DrawString(4, 34, "World size: " + std::to_string(vWorldSize.x) + ", " + std::to_string(vWorldSize.y), olc::BLACK);
 	DrawString(4, 44, "In world bounds: " + std::to_string(bInWorldBounds), olc::BLACK);
-	DrawString(4, 64, "iSelectedTile: " + std::to_string(iSelectedTile) + ", iSelectedObject: " + std::to_string(iSelectedObject) , olc::BLACK);
+	DrawString(4, 64, "iSelectedBaseTile: " + std::to_string(iSelectedBaseTile) + ", iSelectedObject: " + std::to_string(iSelectedObject) , olc::BLACK);
 	DrawString(4, 74, "vObjectSelectorOrigin: " + std::to_string(vObjectSelectorOrigin.x) + ";" + std::to_string(vObjectSelectorOrigin.y), olc::BLACK);
 
-	// Do ImGui stuff here.
-	ImGui::ShowDemoWindow();
-	MainMenu();
+// O------------------------------------------------------------------------------O
+// | Interface																	  |
+// O------------------------------------------------------------------------------O
 
+	ImGui::ShowDemoWindow();
+	if (!ImGui::Begin("Tile selector interface", &bOpen, ImGuiWindowFlags_AlwaysAutoResize))
+		ImGui::End();
+	// UV naming convention: from 0 -> inf; 1st tile is uv0-uv2, 2nd uv1-uv3...
+	// Vector for storing UV coordinates
+	std::vector<ImVec2> TileUVs, ObjUVs;
+	// -1 == uses default padding (style.FramePadding)
+	int frame_padding = -1;
+	// Size of the image we want to make visible
+	ImVec2 size = ImVec2((float)vTileSize.x, (float)vTileSize.y);
+	ImVec2 sizeObj = ImVec2((float)vTileSize.x / 2.0f, (float)vTileSize.y);
+
+	// Tiles
+	// UV coordinates for starting pixels ([0.0,0.0] is upper-left), i.e. draw FROM
+	ImVec2 uv0 = ImVec2(0.0f, 0.0f); TileUVs.push_back(uv0);
+	// UV coordinates for tiles in our image file, i.e. draw TO 
+	ImVec2 uv1 = ImVec2((float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); TileUVs.push_back(uv1);
+
+	ImVec2 uv2 = ImVec2((float)vTileSize.x / (float)vImageSize.x, 0.0f); TileUVs.push_back(uv2);
+	ImVec2 uv3 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); TileUVs.push_back(uv3);
+
+	ImVec2 uv4 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); TileUVs.push_back(uv4);
+	ImVec2 uv5 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); TileUVs.push_back(uv5);
+
+	// Objects
+	//tv.DrawPartialDecal({ (float)vWorld_X,  (float)vWorld_Y }, dclIsom, { 0.0f, (float)5.24f * vTileSize.y }, { (float)vTileSize.x, (float)(1.24f * vTileSize.y) });
+	ImVec2 uvobj0 = ImVec2(0.0f, (3.0f * (float)vTileSize.y) / (float)vImageSize.y); ObjUVs.push_back(uvobj0);
+	ImVec2 uvobj1 = ImVec2(((float)vTileSize.x / 2 ) / (float)vImageSize.x, (4.0f * (float)vTileSize.y) / (float)vImageSize.y); ObjUVs.push_back(uvobj1);
+
+	for (int i = 0; i < TileUVs.size(); i += 2)
+	{
+		ImGui::PushID(i);
+		if (ImGui::ImageButton((void*)(intptr_t)dclIsom->id, size, TileUVs[i], TileUVs[i + 1]))
+		{
+			if (i == 0)
+				iSelectedBaseTile = 1;
+			else
+				iSelectedBaseTile = i; // Tile enums start from 0 (empty tile)!
+		}
+		ImGui::PopID();
+		ImGui::SameLine();
+	}
+	for (int i = 0; i < ObjUVs.size(); i += 2)
+	{
+		ImGui::PushID(i);
+		if (ImGui::ImageButton((void*)(intptr_t)dclIsom->id, sizeObj, ObjUVs[i], ObjUVs[i + 1]));
+		{
+			if (i == 0)
+				iSelectedObject = 1;
+			else
+				iSelectedObject = i; // Tile enums start from 0 (empty tile)!
+		}
+		ImGui::PopID();
+		ImGui::SameLine();
+	}
+	/*ImGui::NewLine();
+	for (int i = 0; i < UVs.size(); i += 2)
+	{
+		ImGui::Text("uvf = (%f, %f)", UVs[i].x, UVs[i].y);
+		ImGui::Text("uvt = (%f, %f)", UVs[i + 1].x, UVs[1 + 1].y);
+	}*/
+	MainMenu();
 	return true;
 }
 
@@ -802,7 +847,7 @@ void MapEditor::MainMenu()
 			if (i == 0)
 				iSelectedBaseTile = 1;
 			else
-				iSelectedBaseTile = i + 1; // Tile enums start from 0 (empty tile)!
+				iSelectedBaseTile = i; // Tile enums start from 0 (empty tile)!
 			ImGui::PopID();
 			ImGui::SameLine();
 		}
@@ -848,6 +893,7 @@ void MapEditor::DrawUI(void)
 	//This finishes the Dear ImGui and renders it to the screen
 	pge_imgui.ImGui_ImplPGE_Render();
 }
+
 
 int main()
 {
