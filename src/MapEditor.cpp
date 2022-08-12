@@ -831,41 +831,26 @@ void MapEditor::MainMenu()
 
 		ImGui::InputInt("Size of x axis", &iNewWorldSizeX);
 		ImGui::InputInt("Size of y axis", &iNewWorldSizeY);
+		ImGui::TextWrapped("Choose base tile type:");
+		
+		// UV naming convention: from 0 -> inf; 1st tile is uv0-uv2, 2nd uv1-uv3...
+		// Vector for storing UV coordinates
+		std::vector<ImVec2> UVs;
+		// -1 == uses default padding (style.FramePadding)
+		int frame_padding = -1;
+		// Size of the image we want to make visible
+		ImVec2 size = ImVec2((float)vTileSize.x, (float)vTileSize.y);
 
-		if (ImGui::Button("Create"))
-		{
-			ImGui::CloseCurrentPopup();
-			bNewWorldCreation = true;
-		}
-		if (ImGui::Button("Cancel"))
-			ImGui::CloseCurrentPopup();
-		ImGui::EndPopup();
-	}
-		}
-		ImGui::NewLine();
-		if (ImGui::Button("Create"))
-		{
-			ImGui::CloseCurrentPopup();
-			bNewWorldCreation = true;
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Cancel"))
-			ImGui::CloseCurrentPopup();
-		ImGui::EndPopup();
-	}
+		// UV coordinates for starting pixels ([0.0,0.0] is upper-left), i.e. draw FROM
+		ImVec2 uv0 = ImVec2(0.0f, 0.0f); UVs.push_back(uv0);
+		// UV coordinates for tiles in our image file, i.e. draw TO 
+		ImVec2 uv1 = ImVec2((float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv1);
 
-	if (bNewWorldCreation)
-		ImGui::OpenPopup("Create new map");
+		ImVec2 uv2 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); UVs.push_back(uv2);
+		ImVec2 uv3 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv3);
 
-	// Always center this window when appearing
-	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-	if (ImGui::BeginPopupModal("Create new map", NULL, ImGuiWindowFlags_MenuBar))
-	{
-
-		ImGui::InputInt("Size of x axis", &iNewWorldSizeX);
-		ImGui::InputInt("Size of y axis", &iNewWorldSizeY);
+		ImVec2 uv4 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); UVs.push_back(uv4);
+		ImVec2 uv5 = ImVec2((4.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv5);
 
 		if (ImGui::Button("Create"))
 		{
