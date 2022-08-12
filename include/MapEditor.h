@@ -105,6 +105,7 @@ private:
 	float fFlip_X;
 	float fFlip_Y;
 
+	bool bNewWorldCreation;
 	bool bInWorldBounds;
 	bool bInTileSelectorBounds;
 	bool bInObjectSelectorBounds;

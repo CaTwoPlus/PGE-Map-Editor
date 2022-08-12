@@ -767,12 +767,12 @@ void MapEditor::MainMenu()
 			ImGui::EndMenu();
 		}
 
-	if (bNewWorldCreation)
-		ImGui::OpenPopup("Create new map");
+		if (bNewWorldCreation)
+			ImGui::OpenPopup("Create new map");
 
-	// Always center this window when appearing
-	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+		// Always center this window when appearing
+		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
 	if (ImGui::BeginPopupModal("Create new map", NULL, ImGuiWindowFlags_MenuBar))
 	{
