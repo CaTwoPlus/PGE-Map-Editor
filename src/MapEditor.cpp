@@ -640,18 +640,6 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	if (bInLoadBoxBounds == true || (bNewWorldCreation && (iNewWorldSizeX != vWorldSize.x || iNewWorldSizeY != vWorldSize.y)))
 	{
 		vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY;
-		{
-			vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY, m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
-			m_vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iSelectedBaseTile);
-		}
-		{
-			vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY, m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
-			m_vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iSelectedBaseTile);
-		}
-		{
-			vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY, m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
-			m_vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iSelectedBaseTile);
-		}
 		for (int y = 0; y < vWorldSize.y; y++)
 		{
 			for (int x = 0; x < vWorldSize.x; x++)

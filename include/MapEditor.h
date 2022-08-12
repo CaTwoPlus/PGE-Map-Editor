@@ -84,13 +84,9 @@ private:
 	int* m_pCellRotationTemp = nullptr;
 	int* i_pTileSelector = nullptr;
 	int* i_pObjectSelector = nullptr;
-<<<<<<< HEAD
-
-=======
 	
 	int iNewWorldSizeX;
 	int iNewWorldSizeY;
->>>>>>> parent of 6f38352 (Implemented tile selector into ImGui.)
 	int iSelectedTile;
 	int iSelectedObject;
 	int iSelectedCells;
