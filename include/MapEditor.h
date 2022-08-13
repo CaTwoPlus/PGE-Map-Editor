@@ -55,6 +55,7 @@ private:
 	olc::vi2d vTileSelectorSize;
 	olc::vi2d vSelected;
 	olc::vi2d vSelectedInterfaceCell;
+	olc::vi2d vImageSize;
 
 	olc::vi2d vPosTileTypeEmpty = { 0, 0 };
 	olc::vi2d vPosTileType1;

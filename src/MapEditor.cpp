@@ -83,6 +83,9 @@ bool MapEditor::OnUserCreate()
 	// Creates decals, so sprites are loaded onto the GPU for better performance
 	dclIsom = new olc::Decal(sprIsom);
 
+	// Source image size - Width * Height
+	vImageSize = { 345, 200 };
+
 	// Create empty world
 	m_pWorld = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
 	m_pObjects = new int[(long long)vWorldSize.x * vWorldSize.y]{ 0 };
@@ -502,33 +505,7 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 		bInObjectSelectorBounds = true;
 	else
 		bInObjectSelectorBounds = false;
-	
-	// Draw red rectangle within selector interface 
-	if (bInTileSelectorBounds == true)
-		DrawRect(vSelectedInterfaceCell.x * vTileSize.x, (vSelectedInterfaceCell.y * vTileSize.y) + (ScreenHeight() - (iTileSelectorNumberOfRows * vTileSize.y)), vTileSize.x, vTileSize.y, olc::RED);
-	if (bInObjectSelectorBounds == true)
-		DrawRect(vSelectedInterfaceCell.x * vTileSize.x, (vSelectedInterfaceCell.y * vTileSize.y) + (ScreenHeight() - (iObjectSelectorNumberOfRows * vTileSize.y)), vTileSize.x, vTileSize.y, olc::RED);
-	if ((iSelectedTile == 1 || iSelectedObject == 1) && (bInTileSelectorBounds == true || bInObjectSelectorBounds == true))
-	{
-		olc::vi2d vSavevSelectedInterfaceCell = { vSelectedInterfaceCell.x,  vSelectedInterfaceCell.y };
-		DrawRect(vSavevSelectedInterfaceCell.x * vTileSize.x, (vSavevSelectedInterfaceCell.y * vTileSize.y) + (ScreenHeight() - (iTileSelectorNumberOfRows * vTileSize.y)), vTileSize.x, vTileSize.y, olc::GREEN);
-	}
 
-	// Is selected tile within save, load box interface area
-	vSaveBoxBoundsY = { 0, 20 }; 
-	vSaveBoxBoundsX = { ScreenWidth() - 40, ScreenWidth() }; 
-	vLoadBoxBoundsY = { 20, 40 }; 
-	vLoadBoxBoundsX = { ScreenWidth() - 40, ScreenWidth() }; 
-
-	if (vMouse.x >= vSaveBoxBoundsX.x && vMouse.x <= vSaveBoxBoundsX.y && vMouse.y >= vSaveBoxBoundsY.x && vMouse.y <= vSaveBoxBoundsY.y)
-		bInSaveBoxBounds = true;
-	else
-		bInSaveBoxBounds = false;
-
-	if (vMouse.x >= vLoadBoxBoundsX.x && vMouse.x <= vLoadBoxBoundsX.y && vMouse.y >= vLoadBoxBoundsY.x && vMouse.y <= vLoadBoxBoundsY.y)
-		bInLoadBoxBounds = true;
-	else
-		bInLoadBoxBounds = false;
 
 	// "Bodge" selected cell by sampling corners
 	// Must be before selection from tile selector interface is assigned, otherwise tiles will not be painted in rhombic shape
@@ -603,6 +580,7 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 
 
 	// Change world map size on key press
+	/*
 	if (GetKey(olc::UP).bPressed)
 	{
 		m_pWorldTemp = new int[vWorldSize.x * (long long)++vWorldSize.y]{ 1 };
@@ -675,6 +653,7 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 		delete[] m_pCellRotation;
 		m_pCellRotation = m_pCellRotationTemp;
 	}
+	*/
 
 	// Drag the world map accross the screen 
 	if (GetMouse(1).bHeld && bInWorldBounds == false && bInLoadBoxBounds == false && bInSaveBoxBounds == false && bInTileSelectorBounds == false)
@@ -686,9 +665,10 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	olc::PixelGameEngine::SetPixelMode(olc::Pixel::MASK);
 
 	// Load map data in or create new map
-	if (bInLoadBoxBounds == true || (bNewWorldCreation && (iNewWorldSizeX != vWorldSize.x || iNewWorldSizeY != vWorldSize.y)))
+	if (bInLoadBoxBounds == true)
 	{
-		vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY;
+		if (bNewWorldCreation && (iNewWorldSizeX != vWorldSize.x || iNewWorldSizeY != vWorldSize.y))
+			vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY;
 		for (int y = 0; y < vWorldSize.y; y++)
 		{
 			for (int x = 0; x < vWorldSize.x; x++)
@@ -826,47 +806,51 @@ void MapEditor::MainMenu()
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-	if (ImGui::BeginPopupModal("Create new map", NULL, ImGuiWindowFlags_MenuBar))
-	{
-
-		ImGui::InputInt("Size of x axis", &iNewWorldSizeX);
-		ImGui::InputInt("Size of y axis", &iNewWorldSizeY);
-		ImGui::TextWrapped("Choose base tile type:");
-		
-		// UV naming convention: from 0 -> inf; 1st tile is uv0-uv2, 2nd uv1-uv3...
-		// Vector for storing UV coordinates
-		std::vector<ImVec2> UVs;
-		// -1 == uses default padding (style.FramePadding)
-		int frame_padding = -1;
-		// Size of the image we want to make visible
-		ImVec2 size = ImVec2((float)vTileSize.x, (float)vTileSize.y);
-
-		// UV coordinates for starting pixels ([0.0,0.0] is upper-left), i.e. draw FROM
-		ImVec2 uv0 = ImVec2(0.0f, 0.0f); UVs.push_back(uv0);
-		// UV coordinates for tiles in our image file, i.e. draw TO 
-		ImVec2 uv1 = ImVec2((float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv1);
-
-		ImVec2 uv2 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); UVs.push_back(uv2);
-		ImVec2 uv3 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv3);
-
-		ImVec2 uv4 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); UVs.push_back(uv4);
-		ImVec2 uv5 = ImVec2((4.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv5);
-
-		if (ImGui::Button("Create"))
+		if (ImGui::BeginPopupModal("Create new map", NULL, ImGuiWindowFlags_MenuBar))
 		{
-			ImGui::CloseCurrentPopup();
-			bNewWorldCreation = true;
+
+			ImGui::InputInt("Size of x axis", &iNewWorldSizeX);
+			ImGui::InputInt("Size of y axis", &iNewWorldSizeY);
+			ImGui::TextWrapped("Choose base tile type:");
+
+			// UV naming convention: from 0 -> inf; 1st tile is uv0-uv2, 2nd uv1-uv3...
+			// Vector for storing UV coordinates
+			std::vector<ImVec2> UVs;
+			// -1 == uses default padding (style.FramePadding)
+			int frame_padding = -1;
+			// Size of the image we want to make visible
+			ImVec2 size = ImVec2((float)vTileSize.x, (float)vTileSize.y);
+
+			// UV coordinates for starting pixels ([0.0,0.0] is upper-left), i.e. draw FROM
+			ImVec2 uv0 = ImVec2(0.0f, 0.0f); UVs.push_back(uv0);
+			// UV coordinates for tiles in our image file, i.e. draw TO 
+			ImVec2 uv1 = ImVec2((float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv1);
+
+			ImVec2 uv2 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); UVs.push_back(uv2);
+			ImVec2 uv3 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv3);
+
+			ImVec2 uv4 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); UVs.push_back(uv4);
+			ImVec2 uv5 = ImVec2((4.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv5);
+
+			if (ImGui::Button("Create"))
+			{
+				ImGui::CloseCurrentPopup();
+				bNewWorldCreation = true;
+			}
+			if (ImGui::Button("Cancel"))
+				ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
 		}
-		if (ImGui::Button("Cancel"))
-			ImGui::CloseCurrentPopup();
-		ImGui::EndPopup();
 	}
 }
 
 void MapEditor::FileMenu()
 {
-	if (ImGui::MenuItem("New")) {}
-	if (ImGui::MenuItem("Open", "Ctrl+O")) { bInLoadBoxBounds = true, LoadMapData(); }
+	if (ImGui::MenuItem("New")) { bNewWorldCreation = true; }
+	if (ImGui::MenuItem("Open", "Ctrl+O")) 
+	{ 
+		bInLoadBoxBounds = true, LoadMapData();
+	}
 	if (ImGui::BeginMenu("Open Recent"))
 	{
 		ImGui::MenuItem("fish_hat.c");
