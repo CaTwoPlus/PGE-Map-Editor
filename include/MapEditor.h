@@ -8,33 +8,36 @@
 #define OLC_PGEX_TRANSFORMEDVIEW
 #include "olcPGEX_TransformedView.h"
 
+#include <random>
+
 class MapEditor : public olc::PixelGameEngine
 {
 	olc::imgui::PGE_ImGUI pge_imgui;
 	
 	// When you add new stuff, always add them after the last existing enum tile/obj type and create new vi2d tile/obj type too, update nr of existing items.
 	// During rendering, objects are coming on top of tiles.
-	enum TileType
-	{
-		TILE_TYPE_EMPTY,
-		TILE_TYPE_DIRT,
-		TILE_TYPE_GRASS,
-		TILE_TYPE_LONG_GRASS,
-		TILE_TYPE_WATER,
-		TILE_TYPE_STONE,
-		TILE_TYPE_NR_ITEMS = 5//should always be last 
-	};
+	public:
+		enum TileType
+		{
+			TILE_TYPE_EMPTY,
+			TILE_TYPE_DIRT,
+			TILE_TYPE_GRASS,
+			TILE_TYPE_LONG_GRASS,
+			TILE_TYPE_WATER,
+			TILE_TYPE_STONE,
+			TILE_TYPE_NR_ITEMS = 5//should always be last 
+		};
 
-	enum Objects
-	{
-		OBJ_TYPE_EMPTY,
-		OBJ_TYPE_BROWN_ROCK = TILE_TYPE_NR_ITEMS + 1,
-		OBJ_TYPE_YELLOW_FLOWERS = TILE_TYPE_NR_ITEMS + 2,
-		OBJ_TYPE_TREE_TRUNK = TILE_TYPE_NR_ITEMS + 3,
-		OBJ_TYPE_TREE = TILE_TYPE_NR_ITEMS + 4,
-		OBJ_TYPE_SIGNPOST = TILE_TYPE_NR_ITEMS + 5,
-		OBJ_TYPE_NR_ITEMS = 4
-	};
+		enum Objects
+		{
+			OBJ_TYPE_EMPTY,
+			OBJ_TYPE_BROWN_ROCK = TILE_TYPE_NR_ITEMS + 1,
+			OBJ_TYPE_YELLOW_FLOWERS = TILE_TYPE_NR_ITEMS + 2,
+			OBJ_TYPE_TREE_TRUNK = TILE_TYPE_NR_ITEMS + 3,
+			OBJ_TYPE_TREE = TILE_TYPE_NR_ITEMS + 4,
+			OBJ_TYPE_SIGNPOST = TILE_TYPE_NR_ITEMS + 5,
+			OBJ_TYPE_NR_ITEMS = 4
+		};
 
 	public:
 		MapEditor();
@@ -116,8 +119,7 @@ class MapEditor : public olc::PixelGameEngine
 		bool bInWorldBounds;
 		bool bInTileSelectorBounds;
 		bool bInObjectSelectorBounds;
-		bool bInSaveBoxBounds;
-		bool bInLoadBoxBounds;
+		bool bLoadMap;
 		bool bLeftMouseClicked;
 		bool bIsMapLoaded;
 		bool bBrushSizeIncr;

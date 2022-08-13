@@ -46,9 +46,8 @@ MapEditor::MapEditor() : pge_imgui(true)
 	// Flag for selector interface bounds checking 
 	bInTileSelectorBounds = false;
 	bInObjectSelectorBounds = false;
-	// Flag for save box bounds checking 
-	bInSaveBoxBounds = false;
-	bInLoadBoxBounds = false;
+	// Flag for loading/saving map
+	bLoadMap = false;
 	// Flag for checking if tile is selected 
 	bLeftMouseClicked = false;
 	// Flag for checking if map is loaded in 
@@ -71,6 +70,50 @@ MapEditor::~MapEditor()
 	delete[] i_pTileSelector;
 	delete[] i_pObjectSelector;
 }
+
+class cMap : MapEditor
+{
+public:
+	cMap(uint32_t x, uint32_t y)
+	{
+		nLehmer = (x & 0xFFFF) << 16 | (y & 0xFFFF); //16 bit coordinate resolution on each axis. Increase if bigger map is needed. 
+
+		bFoliageExists = (RndInt(0, 20) == 1);
+		if (!bFoliageExists) return;
+
+		//If exists, determine the foliage type, and object type on it 
+		iTileType = RndInt(2, 3);
+		//iObjectType = RndInt(1, 4);
+	}
+public:
+	bool bFoliageExists = false;
+	int iLayerNumber = 0;
+	int iTileType = TILE_TYPE_DIRT;
+	int iObjectType = OBJ_TYPE_EMPTY; 
+
+public:
+	uint32_t nLehmer = 0;
+	uint32_t Lehmer32() //Pseudo-random number generator
+	{
+		nLehmer += 0xe120fc15;
+		uint64_t tmp;
+		tmp = (uint64_t)nLehmer * 0x4a39b70d;
+		uint32_t m1 = (tmp >> 32) ^ tmp;
+		tmp = (uint64_t)m1 * 0x12fad5c9;
+		uint32_t m2 = (tmp >> 32) ^ tmp;
+		return m2;
+	}
+
+	int RndInt(int min, int max) //Return random int
+	{
+		return (Lehmer32() % (max - min)) + min;
+	}
+
+	double RndDouble(double min, double max) //Return random double
+	{
+		return ((double)Lehmer32() / double(0x7FFFFFFF)) * (max - min) + min;
+	}
+};
 
 bool MapEditor::OnUserCreate()
 {
@@ -592,24 +635,16 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 		for (int i = 0; i < vWorldSize.y; i++) m_vWorld.push_back(iCurrentTile), m_vObjects.push_back(0), m_vCellRotation.push_back(iCurrentRotation);
 	}
 
-	// Drag the world map accross the screen 
-	//if (GetMouse(1).bHeld && bInWorldBounds == false && bInTileSelectorBounds == false)
-		//vOrigin = vCell;
-
 	// Draw World - has binary transperancy so enable masking
 	olc::PixelGameEngine::SetPixelMode(olc::Pixel::MASK);
 
 	// Load map data in or create new map
-	olc::vi2d vTL = tv.GetTopLeftTile().max({ 0,0 });
-	olc::vi2d vBR = tv.GetBottomRightTile().min(vWorldSize);
-	olc::vi2d vTile;
-	
-	if (bInLoadBoxBounds == true || bNewWorldCreation == true)
+	if (bLoadMap == true || bNewWorldCreation == true)
 	{
 		if (bNewWorldCreation && (iNewWorldSizeX != vWorldSize.x || iNewWorldSizeY != vWorldSize.y))
 		{
 			vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY, m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
-			m_vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iSelectedBaseTile);
+			m_vWorld.assign((long long)vWorldSize.x * vWorldSize.y, iSelectedBaseTile);
 		}
 
 		for (int y = 0; y < vWorldSize.y; y++)
@@ -639,28 +674,34 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
 						break;
 					}
-					switch (m_vWorld[n])
+					
+					cMap map(vWorldSize.x, vWorldSize.y);
+					if (map.bFoliageExists) //Draw the map here with existing tiles
 					{
-					case TILE_TYPE_DIRT:
-						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-						break;
-					case TILE_TYPE_GRASS:
-						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-						break;
-					case TILE_TYPE_LONG_GRASS:
-						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-						break;
-					case TILE_TYPE_WATER:
-						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-						break;
-					case TILE_TYPE_STONE:
-						tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-						break;
+						m_vWorld[n] = map.iTileType;
+						switch (m_vWorld[n])
+						{
+						case TILE_TYPE_DIRT:
+							tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+							break;
+						case TILE_TYPE_GRASS:
+							tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+							break;
+						case TILE_TYPE_LONG_GRASS:
+							tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+							break;
+						case TILE_TYPE_WATER:
+							tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+							break;
+						case TILE_TYPE_STONE:
+							tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
+							break;
+						}
 					}
 				}
 			}
 		}
-		bIsMapLoaded = true, bInLoadBoxBounds = false, bNewWorldCreation == false;
+		bIsMapLoaded = true, bLoadMap = false, bNewWorldCreation == false;
 	}
 
 	// Main for loop for tile rendering 
@@ -696,7 +737,7 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 		//DrawPartialSprite(vSelectedWorld.x, vSelectedWorld.y, sprIsom, 1 * vTileSize.x, vTileSize.y, vTileSize.x, vTileSize.y, iSelectedCells);
 		tv.DrawPartialDecal({ (float)vSelectedWorld.x, (float)vSelectedWorld.y }, dclIsom, { (float)1 * vTileSize.x, (float)vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y }, { (float)iSelectedCells, (float)iSelectedCells });
 	
-	
+	/*
 	// Draw box for save function
 	DrawRect(ScreenWidth() - 40, 0, 40, 20, olc::BLACK);
 	DrawRect(ScreenWidth() - 40, 20, 40, 20, olc::BLACK);
@@ -705,6 +746,7 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	// Draw write to png save string 
 	DrawString(ScreenWidth() - 35, ScreenHeight() - (ScreenHeight() - 7), "Save", olc::BLACK);
 	DrawString(ScreenWidth() - 35, ScreenHeight() - (ScreenHeight() - 27), "Load", olc::BLACK);
+	*/
 	// Draw Debug Info - '+' here is operator overloading (string concatenation) 
 	DrawString(4, 4, "Mouse   : " + std::to_string(vMouse.x) + ", " + std::to_string(vMouse.y), olc::BLACK);
 	DrawString(4, 14, "Cell    : " + std::to_string(vCell.x) + ", " + std::to_string(vCell.y), olc::BLACK);
@@ -866,7 +908,7 @@ void MapEditor::MainMenu()
 
 void MapEditor::FileMenu()
 {
-	if (ImGui::MenuItem("Open", "Ctrl+O")) { bInLoadBoxBounds = true, LoadMapData(); }
+	if (ImGui::MenuItem("Open", "Ctrl+O")) { bLoadMap = true, LoadMapData(); }
 	if (ImGui::BeginMenu("Open Recent"))
 	{
 		ImGui::MenuItem("fish_hat.c");
