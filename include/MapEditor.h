@@ -48,17 +48,7 @@ class MapEditor : public olc::PixelGameEngine
 		olc::vi2d vWorldSize;
 		olc::vi2d vTileSize;
 		olc::vi2d vOrigin;
-		olc::vi2d vTileSelectorOrigin;
 		olc::vi2d vObjectSelectorOrigin;
-		olc::vi2d vTileSelectorFrameX;
-		olc::vi2d vObjectSelectorFrameX;
-		olc::vi2d vTileSelectorFrameY;
-		olc::vi2d vObjectSelectorFrameY;
-		olc::vi2d vSaveBoxBoundsY;
-		olc::vi2d vSaveBoxBoundsX;
-		olc::vi2d vLoadBoxBoundsY;
-		olc::vi2d vLoadBoxBoundsX;
-		olc::vi2d vTileSelectorSize;
 		olc::vi2d vSelected;
 		olc::vi2d vSelectedInterfaceCell;
 
