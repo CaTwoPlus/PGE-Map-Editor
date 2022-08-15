@@ -161,6 +161,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="imgui_impl_pge_test.h" />
+    <ClInclude Include="include\imconfig.h" />
     <ClInclude Include="include\MapEditor.h" />
     <ClInclude Include="include\olcPGEX_TransformedView.h" />
     <ClInclude Include="include\olcPixelGameEngine.h" />

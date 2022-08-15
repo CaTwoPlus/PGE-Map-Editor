@@ -17,10 +17,6 @@ MapEditor::MapEditor() : pge_imgui(true)
 
 	iSelectedCells = 1;
 	iNumberOfTiles = TILE_TYPE_NR_ITEMS;
-	iTileSelectorNumberOfRows = 3; // has to change these value manually 
-	iObjectSelectorNumberOfColumns = 5; //
-	iTileSelectorNumberOfColumns = 10; // 
-	iObjectSelectorNumberOfRows = 3;
 
 	iLayerEditor = 0;
 	iLayerTop = 2;
@@ -32,17 +28,8 @@ MapEditor::MapEditor() : pge_imgui(true)
 	sFileData = { "C:/Users/ReBorn/source/repos/MapEditor/MapEditor/maps/test_map.csv" };
 	// Sprite object that holds all imagery
 	sprIsom = nullptr;
-	// Pointer to create 2D world array
-	//m_vWorld = nullptr;
-	//m_vObjects = nullptr;
-	// For storing 2D selector arrays
-	i_pTileSelector = nullptr;
-	i_pObjectSelector = nullptr;
 	// Flag for wrldspace bounds checking 
 	bInWorldBounds = false;
-	// Flag for selector interface bounds checking 
-	bInTileSelectorBounds = false;
-	bInObjectSelectorBounds = false;
 	// Flag for loading/saving map
 	bLoadMap = false;
 	// Flag for checking if tile is selected 
@@ -64,8 +51,6 @@ MapEditor::MapEditor() : pge_imgui(true)
 
 MapEditor::~MapEditor()
 {
-	delete[] i_pTileSelector;
-	delete[] i_pObjectSelector;
 }
 
 class cMap
@@ -157,55 +142,90 @@ bool MapEditor::OnUserCreate()
 	return true;
 }
 
-void MapEditor::TileSelector(int vCellX, int vCellY)
+
+void MapEditor::TileSelector(int iSelectedBaseTile, int iSelectedObject)
 {
-	if (GetMouse(0).bPressed && bInTileSelectorBounds == true)
+	/*
+	++iSelectedTile;
+	if (iSelectedTile > 2)
+		iSelectedTile = 1;
+	if (iSelectedTile == 2)
+		iSelectedTile = 0, *m_vTileSelector = TILE_TYPE_EMPTY;
+	if (iSelectedTile == 1)
 	{
-		++iSelectedTile;
-		if (iSelectedTile > 2)
-			iSelectedTile = 1;
-		if (iSelectedTile == 2)
-			iSelectedTile = 0, *i_pTileSelector = TILE_TYPE_EMPTY;
-		if (iSelectedTile == 1)
-		{
-			if (vPosTileType1.x == vCellX && vPosTileType1.y == vCellY)
-				*i_pTileSelector = TILE_TYPE_DIRT;
-			if (vPosTileType2.x == vCellX && vPosTileType2.y == vCellY)
-				*i_pTileSelector = TILE_TYPE_GRASS;
-			if (vPosTileType3.x == vCellX && vPosTileType3.y == vCellY)
-				*i_pTileSelector = TILE_TYPE_LONG_GRASS;
-			if (vPosTileType4.x == vCellX && vPosTileType4.y == vCellY)
-				*i_pTileSelector = TILE_TYPE_WATER;
-			if (vPosTileType5.x == vCellX && vPosTileType5.y == vCellY)
-				*i_pTileSelector = TILE_TYPE_STONE;
-		}
+		if (vPosTileType1.x == vCellX && vPosTileType1.y == vCellY)
+			*m_vTileSelector = TILE_TYPE_DIRT;
+		if (vPosTileType2.x == vCellX && vPosTileType2.y == vCellY)
+			*m_vTileSelector = TILE_TYPE_GRASS;
+		if (vPosTileType3.x == vCellX && vPosTileType3.y == vCellY)
+			*m_vTileSelector = TILE_TYPE_LONG_GRASS;
+		if (vPosTileType4.x == vCellX && vPosTileType4.y == vCellY)
+			*m_vTileSelector = TILE_TYPE_WATER;
+		if (vPosTileType5.x == vCellX && vPosTileType5.y == vCellY)
+			*m_vTileSelector = TILE_TYPE_STONE;
 	}
 
-	if (GetMouse(0).bPressed && bInObjectSelectorBounds == true)
+	++iSelectedObject;
+	if (iSelectedObject > 2)
+		iSelectedObject = 1;
+	if (iSelectedObject == 2)
+		iSelectedObject = 0, *m_vObjectSelector = OBJ_TYPE_EMPTY;
+	if (iSelectedObject == 1)
 	{
-		++iSelectedObject;
-		if (iSelectedObject > 2)
-			iSelectedObject = 1;
-		if (iSelectedObject == 2)
-			iSelectedObject = 0, *i_pObjectSelector = OBJ_TYPE_EMPTY;
-		if (iSelectedObject == 1)
-		{
-			if (vPosObjType1.x == vCellX && vPosObjType1.y == vCellY)
-				*i_pObjectSelector = OBJ_TYPE_BROWN_ROCK;
-			if (vPosObjType2.x == vCellX && vPosObjType2.y == vCellY)
-				*i_pObjectSelector = OBJ_TYPE_YELLOW_FLOWERS;
-			if (vPosObjType3.x == vCellX && vPosObjType3.y == vCellY)
-				*i_pObjectSelector = OBJ_TYPE_TREE_TRUNK;
-			if (vPosObjType4.x == vCellX && vPosObjType4.y == vCellY)
-				*i_pObjectSelector = OBJ_TYPE_SIGNPOST;
-			if (vPosObjType5.x == vCellX && vPosObjType5.y == vCellY)
-				*i_pObjectSelector = OBJ_TYPE_TREE;
-		}
+		if (vPosObjType1.x == vCellX && vPosObjType1.y == vCellY)
+			*m_vObjectSelector = OBJ_TYPE_BROWN_ROCK;
+		if (vPosObjType2.x == vCellX && vPosObjType2.y == vCellY)
+			*m_vObjectSelector = OBJ_TYPE_YELLOW_FLOWERS;
+		if (vPosObjType3.x == vCellX && vPosObjType3.y == vCellY)
+			*m_vObjectSelector = OBJ_TYPE_TREE_TRUNK;
+		if (vPosObjType4.x == vCellX && vPosObjType4.y == vCellY)
+			*m_vObjectSelector = OBJ_TYPE_SIGNPOST;
+		if (vPosObjType5.x == vCellX && vPosObjType5.y == vCellY)
+			*m_vObjectSelector = OBJ_TYPE_TREE;
 	}
 
 	// For debugging - changed the variable (name was taken already)
 	//TileSelectorCell.x = vSelectedInterfaceAreaX,
 	//vTileSelectorCell.y = vSelectedInterfaceAreaY;
+	*/
+
+	m_vTileSelector.clear();
+	switch (iSelectedBaseTile)
+	{
+	case 0:
+		m_vTileSelector.push_back(TILE_TYPE_EMPTY);
+	case 1:
+		m_vTileSelector.push_back(TILE_TYPE_DIRT);
+	case 2:
+		m_vTileSelector.push_back(TILE_TYPE_GRASS);
+	case 3:
+		m_vTileSelector.push_back(TILE_TYPE_LONG_GRASS);
+	case 4:
+		m_vTileSelector.push_back(TILE_TYPE_WATER);
+	case 5:
+		m_vTileSelector.push_back(TILE_TYPE_STONE);
+	default:
+		break;
+	}
+
+	m_vObjectSelector.clear();
+	switch (iSelectedObject)
+	{
+	default:
+	case 0:
+		m_vObjectSelector.push_back(OBJ_TYPE_EMPTY);
+	case 1:
+		m_vObjectSelector.push_back(OBJ_TYPE_BROWN_ROCK);
+	case 2:
+		m_vObjectSelector.push_back(OBJ_TYPE_YELLOW_FLOWERS);
+	case 3:
+		m_vObjectSelector.push_back(OBJ_TYPE_TREE_TRUNK);
+	case 4:
+		m_vObjectSelector.push_back(OBJ_TYPE_TREE);
+	case 5:
+		m_vObjectSelector.push_back(OBJ_TYPE_SIGNPOST);
+		break;
+	}
 }
 
 void MapEditor::SaveMapData()
@@ -401,8 +421,8 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 
 				if (index_x >= 0 && index_x < vWorldSize.x && index_y >= 0 && index_y < vWorldSize.y)
 				{
-					m_vObjects[index_y * (long long)vWorldSize.x + index_x] = *i_pObjectSelector;
-					m_vWorld[index_y * (long long)vWorldSize.x + index_x] = *i_pTileSelector;
+					if (m_vObjectSelector.size() > 0) m_vObjects[index_y * (long long)vWorldSize.x + index_x] = m_vObjectSelector[0];
+					if (m_vTileSelector.size() > 0) m_vWorld[index_y * (long long)vWorldSize.x + index_x] = m_vTileSelector[0];
 					m_vCellRotation[index_y * (long long)vWorldSize.x + index_x] = bFlipped;
 				}
 
@@ -411,8 +431,8 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 		/*
 		if (vSelected.x >= 0 && vSelected.x < vWorldSize.x && vSelected.x >= 0 && vSelected.y < vWorldSize.y)
 		{
-			m_vObjects[vSelected.y * vWorldSize.x + vSelected.x] = *i_pObjectSelector;
-			m_vWorld[vSelected.y * vWorldSize.x + vSelected.x] = *i_pTileSelector;
+			m_vObjects[vSelected.y * vWorldSize.x + vSelected.x] = *m_vObjectSelector;
+			m_vWorld[vSelected.y * vWorldSize.x + vSelected.x] = *m_vTileSelector;
 			m_vCellRotation[vSelected.y * vWorldSize.x + vSelected.x] = bFlipped;
 		}*/
 	}
@@ -501,9 +521,9 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	olc::PixelGameEngine::SetPixelMode(olc::Pixel::MASK);
 
 	// Load map data in or create new map
-	if (bLoadMap == true || bNewWorldCreation == true)
+	if (bLoadMap == true || bNewWorldToCreate == true)
 	{
-		if (bNewWorldCreation)
+		if (bNewWorldToCreate)
 		{
 			vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY, m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
 			m_vWorld.assign((long long)vWorldSize.x * vWorldSize.y, iSelectedBaseTile);
@@ -563,7 +583,7 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 				}
 			}
 		}
-		bIsMapLoaded = true, bLoadMap = false, bNewWorldCreation == false;
+		bIsMapLoaded = true, bLoadMap = false, bNewWorldToCreate == false;
 	}
 
 	// Main for loop for tile rendering 
@@ -591,13 +611,10 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	// Convert selector interface cell coordinate to world space
 	//olc::vi2d vSelectedInterfaceAreaTiles = InterfaceToScreenTiles(vSelectedInterfaceCell.x, vSelectedInterfaceCell.y);
 
-	// Draw tile selection
-	//TileSelector(vCell.x, vCell.y);
-
 	// Draw "highlight" tile
 	if (bInWorldBounds == true)
 		//DrawPartialSprite(vSelectedWorld.x, vSelectedWorld.y, sprIsom, 1 * vTileSize.x, vTileSize.y, vTileSize.x, vTileSize.y, iSelectedCells);
-		tv.DrawPartialDecal({ (float)vSelectedWorld.x, (float)vSelectedWorld.y }, dclIsom, { (float)1 * vTileSize.x, (float)vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y }, { (float)iSelectedCells, (float)iSelectedCells });
+		DrawPartialDecal({ (float)vSelectedWorld.x, (float)vSelectedWorld.y }, dclIsom, { (float)1 * vTileSize.x, (float)vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y }, { (float)iSelectedCells, (float)iSelectedCells });
 
 	// Draw Debug Info - '+' here is operator overloading (string concatenation) 
 	DrawString(4, 4, "Mouse   : " + std::to_string(vMouse.x) + ", " + std::to_string(vMouse.y), olc::BLACK);
@@ -613,6 +630,8 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 // O------------------------------------------------------------------------------O
 
 	ImGui::ShowDemoWindow();
+	// For debugging
+	//ImGui::ShowStackToolWindow(); 
 	if (!ImGui::Begin("Tile selector interface", &bOpen, ImGuiWindowFlags_AlwaysAutoResize))
 		ImGui::End();
 	// UV naming convention: from 0 -> inf; 1st tile is uv0-uv2, 2nd uv1-uv3...
@@ -624,7 +643,8 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	ImVec2 size = ImVec2((float)vTileSize.x, (float)vTileSize.y);
 	ImVec2 sizeObj = ImVec2((float)vTileSize.x / 2.0f, (float)vTileSize.y);
 
-	// Tiles
+// Tiles and object selector UI
+	// Tiles 
 	// UV coordinates for starting pixels ([0.0,0.0] is upper-left), i.e. draw FROM
 	ImVec2 uv0 = ImVec2(0.0f, 0.0f); TileUVs.push_back(uv0);
 	// UV coordinates for tiles in our image file, i.e. draw TO 
@@ -667,6 +687,8 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 		ImGui::PopID();
 		ImGui::SameLine();
 	}
+	//Itt  tartottam - heap corruption in xmemory
+	//TileSelector(iSelectedBaseTile, iSelectedObject);
 	/*ImGui::NewLine();
 	for (int i = 0; i < UVs.size(); i += 2)
 	{
@@ -728,20 +750,22 @@ void MapEditor::MainMenu()
 		// UV coordinates for tiles in our image file, i.e. draw TO 
 		ImVec2 uv1 = ImVec2((float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv1);
 
-		ImVec2 uv2 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); UVs.push_back(uv2);
-		ImVec2 uv3 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv3);
+		ImVec2 uv2 = ImVec2((float)vTileSize.x / (float)vImageSize.x, 0.0f); UVs.push_back(uv2);
+		ImVec2 uv3 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv3);
 
-		ImVec2 uv4 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); UVs.push_back(uv4);
-		ImVec2 uv5 = ImVec2((4.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv5);
+		ImVec2 uv4 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); UVs.push_back(uv4);
+		ImVec2 uv5 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv5);
 
 		for (int i = 0; i < UVs.size() / 2; i++)
 		{
 			ImGui::PushID(i);
-			if (ImGui::ImageButton((void*)(intptr_t)dclIsom->id, size, UVs[i], UVs[i + 1]));
-			if (i == 0)
-				iSelectedBaseTile = 1;
-			else
-				iSelectedBaseTile = i; // Tile enums start from 0 (empty tile)!
+			if (ImGui::ImageButton((void*)(intptr_t)dclIsom->id, size, UVs[i], UVs[i + 1]))
+			{
+				if (i == 0)
+					iSelectedBaseTile = 1;
+				else
+					iSelectedBaseTile = i + 1; // Tile enums start from 0 (empty tile)!
+			}
 			ImGui::PopID();
 			ImGui::SameLine();
 		}
@@ -749,7 +773,7 @@ void MapEditor::MainMenu()
 		if (ImGui::Button("Create"))
 		{
 			ImGui::CloseCurrentPopup();
-			bNewWorldCreation = true;
+			bNewWorldToCreate = true;
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel"))

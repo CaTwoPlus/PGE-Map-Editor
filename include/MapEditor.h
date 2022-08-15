@@ -80,8 +80,10 @@ class MapEditor : public olc::PixelGameEngine
 		std::vector<int> m_vObjectsTemp;
 		std::vector<int> m_vCellRotation;
 		std::vector<int> m_vCellRotationTemp;
-		int* i_pTileSelector;
-		int* i_pObjectSelector;
+		std::vector<int> m_vTileSelector;
+		std::vector<int> m_vObjectSelector;
+		//int* i_pTileSelector;
+		//int* i_pObjectSelector;
 	
 		int iNewWorldSizeX;
 		int iNewWorldSizeY;
@@ -91,10 +93,6 @@ class MapEditor : public olc::PixelGameEngine
 		int iSelectedCells;
 		int iNumberOfTiles;
 		int iNumberOfObjects;
-		int iTileSelectorNumberOfRows;
-		int iObjectSelectorNumberOfRows;
-		int iTileSelectorNumberOfColumns; 
-		int iObjectSelectorNumberOfColumns;
 
 		int iLayerEditor;
 		int iLayerBackground;
@@ -116,10 +114,11 @@ class MapEditor : public olc::PixelGameEngine
 		bool bBrushSizeDecr;
 		bool bFlipped;
 		bool bNewWorldCreation;
+		bool bNewWorldToCreate;
 
 	public:
 
-		void TileSelector(int vCellX, int vCellY);
+		void TileSelector(int iSelectedBaseTile, int iSelectedObject);
 		void DrawFlippedDecal(int WorldSizeIndex_X, int WorldSizeIndex_Y, int32_t vWorld_X, int32_t vWorld_Y, int32_t vCenter_X, int32_t vCenter_Y, float fAngle, float fFlip_X, float fFlip_Y);
 		void SaveMapData();
 		bool LoadMapData();
