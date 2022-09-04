@@ -53,22 +53,22 @@ MapEditor::~MapEditor()
 {
 }
 
-class cMap
+class cMapGenerate
 {
 public:
-	cMap(uint32_t x, uint32_t y)
+	cMapGenerate(uint32_t x, uint32_t y)
 	{
 		nLehmer = (x & 0xFFFF) << 16 | (y & 0xFFFF); //16 bit coordinate resolution on each axis. Increase if bigger map is needed. 
 
-		bFoliageExists = (RndInt(0, 5) == 1);
+		bFoliageExists = (RndInt(0, 10) == 0);
 		if (!bFoliageExists) return;
 
 		//If exists, determine the foliage type, and object type on it 
-		iTileType = RndInt(2, 3);
+		iTileType = RndInt(2, 5);
 		//iObjectType = RndInt(1, 4);
 	}
 public:
-	bool bFoliageExists = false;
+	bool bFoliageExists = true;
 	int iLayerNumber = 0;
 	int iTileType = MapEditor::TILE_TYPE_DIRT;
 	int iObjectType = MapEditor::OBJ_TYPE_EMPTY;
@@ -141,7 +141,6 @@ bool MapEditor::OnUserCreate()
 
 	return true;
 }
-
 
 void MapEditor::TileSelector(int iSelectedBaseTile, int iSelectedObject)
 {
@@ -249,11 +248,10 @@ bool MapEditor::LoadMapData()
 		m_vCellRotation.resize((long long)vWorldSize.x * vWorldSize.y), m_vCellRotation = { 0 };
 		while (!MapData.eof())
 		{
-			int tempwrld, tempobject;
-			MapData >> tempwrld >> tempobject;
-			m_vWorld.push_back(tempwrld), m_vObjects.push_back(tempobject);
+			int tempwrld, tempobject,temprotation;
+			MapData >> tempwrld >> tempobject >> temprotation;
+			m_vWorld.push_back(tempwrld), m_vObjects.push_back(tempobject), m_vCellRotation.push_back(temprotation);
 		}
-		bIsMapLoaded = false;
 		return true;
 	}
 	return false;
@@ -338,12 +336,8 @@ void MapEditor::DrawFlippedDecal(int WorldSizeIndex_X, int WorldSizeIndex_Y, int
 //Main loop//
 bool MapEditor::OnUserUpdate(float fElapsedTime)
 {
-	// Handle pan & zoom
-	if (GetMouse(2).bPressed) tv.StartPan(GetMousePos());
-	if (GetMouse(2).bHeld) tv.UpdatePan(GetMousePos());
-	if (GetMouse(2).bReleased) tv.EndPan(GetMousePos());
-	if (GetKey(olc::PGDN).bPressed) tv.ZoomAtScreenPos(2.0f, GetMousePos());
-	if (GetKey(olc::PGUP).bPressed) tv.ZoomAtScreenPos(0.5f, GetMousePos());
+	if (GetKey(olc::ESCAPE).bPressed)
+		return 0;
 
 	SetDrawTarget(iLayerEditor);
 	Clear(olc::WHITE);
@@ -388,54 +382,62 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	// Work out mouse offset into cell
 	olc::vi2d vOffset = { vMouse.x % vTileSize.x, vMouse.y % vTileSize.x};
 
-	// Handle mouse click to toggle if a tile is visible or not
-	// Selection from tile selector interface is assigned here to the selected worldspace cell 
-	if (olc::PixelGameEngine::GetMouse(0).bPressed || olc::PixelGameEngine::GetMouse(0).bHeld)
+	// Is selected tile within world space
+	if (vSelected.x >= 0 && vSelected.x < vWorldSize.x && vSelected.y >= 0 && vSelected.y < vWorldSize.y)
 	{
-		for (int i = 1; i <= iSelectedCells; i++) {
-			for (int j = 1; j <= iSelectedCells; j++) {
+		bInWorldBounds = true;
+		// Handle mouse click to toggle if a tile is visible or not
+		// Selection from tile selector interface is assigned here to the selected worldspace cell 
+		if (olc::PixelGameEngine::GetMouse(0).bPressed || olc::PixelGameEngine::GetMouse(0).bHeld)
+		{
+			for (int i = 1; i <= iSelectedCells; i++) {
+				for (int j = 1; j <= iSelectedCells; j++) {
 
-				int index_x = vSelected.x + j;
-				int index_y = vSelected.y + i;
-
-				vOffset.x += index_x;
-				vOffset.y += index_y;
-
-				if ( i != 1 || j != 1 )
-				{
 					int index_x = vSelected.x + j;
 					int index_y = vSelected.y + i;
 
 					vOffset.x += index_x;
 					vOffset.y += index_y;
+
+					if (i != 1 || j != 1)
+					{
+						int index_x = vSelected.x + j;
+						int index_y = vSelected.y + i;
+
+						vOffset.x += index_x;
+						vOffset.y += index_y;
+					}
+
+					else
+					{
+						int index_x = vSelected.x;
+						int index_y = vSelected.y;
+
+						vOffset.x += index_x;
+						vOffset.y += index_y;
+					}
+
+					if (index_x >= 0 && index_x < vWorldSize.x && index_y >= 0 && index_y < vWorldSize.y)
+					{
+						if (m_vObjectSelector.size() > 0) m_vObjects[index_y * (long long)vWorldSize.x + index_x] = m_vObjectSelector[0];
+						if (m_vTileSelector.size() > 0) m_vWorld[index_y * (long long)vWorldSize.x + index_x] = m_vTileSelector[0];
+						m_vCellRotation[index_y * (long long)vWorldSize.x + index_x] = bFlipped;
+					}
+
 				}
-
-				else
-				{
-					int index_x = vSelected.x;
-					int index_y = vSelected.y;
-
-					vOffset.x += index_x;
-					vOffset.y += index_y;
-				}
-
-				if (index_x >= 0 && index_x < vWorldSize.x && index_y >= 0 && index_y < vWorldSize.y)
-				{
-					if (m_vObjectSelector.size() > 0) m_vObjects[index_y * (long long)vWorldSize.x + index_x] = m_vObjectSelector[0];
-					if (m_vTileSelector.size() > 0) m_vWorld[index_y * (long long)vWorldSize.x + index_x] = m_vTileSelector[0];
-					m_vCellRotation[index_y * (long long)vWorldSize.x + index_x] = bFlipped;
-				}
-
 			}
+			/*
+			if (vSelected.x >= 0 && vSelected.x < vWorldSize.x && vSelected.x >= 0 && vSelected.y < vWorldSize.y)
+			{
+				m_vObjects[vSelected.y * vWorldSize.x + vSelected.x] = *m_vObjectSelector;
+				m_vWorld[vSelected.y * vWorldSize.x + vSelected.x] = *m_vTileSelector;
+				m_vCellRotation[vSelected.y * vWorldSize.x + vSelected.x] = bFlipped;
+			}*/
 		}
-		/*
-		if (vSelected.x >= 0 && vSelected.x < vWorldSize.x && vSelected.x >= 0 && vSelected.y < vWorldSize.y)
-		{
-			m_vObjects[vSelected.y * vWorldSize.x + vSelected.x] = *m_vObjectSelector;
-			m_vWorld[vSelected.y * vWorldSize.x + vSelected.x] = *m_vTileSelector;
-			m_vCellRotation[vSelected.y * vWorldSize.x + vSelected.x] = bFlipped;
-		}*/
+
 	}
+	else
+		bInWorldBounds = false;
 
 	// Sample into cell offset colour
 	//olc::Pixel col = sprIsom->GetPixel(3 * vTileSize.x + vOffset.x, vOffset.y); 
@@ -520,15 +522,16 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	// Draw World - has binary transperancy so enable masking
 	olc::PixelGameEngine::SetPixelMode(olc::Pixel::MASK);
 
-	// Load map data in or create new map
+	// Draw map data or draw new map
 	if (bLoadMap == true || bNewWorldToCreate == true)
 	{
 		if (bNewWorldToCreate)
 		{
 			vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY, m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
-			m_vWorld.assign((long long)vWorldSize.x * vWorldSize.y, iSelectedBaseTile);
+			m_vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iSelectedBaseTile), bNewWorldToCreate = false;
 		}
 
+		/*
 		for (int y = 0; y < vWorldSize.y; y++)
 		{
 			for (int x = 0; x < vWorldSize.x; x++)
@@ -557,7 +560,8 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 						break;
 					}
 					
-					cMap map(vWorldSize.x, vWorldSize.y);
+					
+					cMapGenerate map(vWorldSize.x, vWorldSize.y);
 					if (map.bFoliageExists) //Draw the map here with existing tiles
 					{
 						m_vWorld[n] = map.iTileType;
@@ -580,24 +584,30 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 							break;
 						}
 					}
+					
 				}
 			}
 		}
-		bIsMapLoaded = true, bLoadMap = false, bNewWorldToCreate == false;
+		*/
+		bIsMapLoaded = true, bLoadMap = false;
 	}
 
 	// Main for loop for tile rendering 
 	// (0,0) is at top, defined by vOrigin, so draw from top to bottom
 	// to ensure tiles closest to camera are drawn last
-	if (bIsMapLoaded == true)
+	if (bIsMapLoaded == true || bNewWorldToCreate == false)
 	{
 		for (int y = 0; y < vWorldSize.y; y++)
 		{
-
 			for (int x = 0; x < vWorldSize.x; x++)
 			{
 				// Convert cell coordinate to world space
 				olc::vi2d vWorld = ToScreen(x, y);
+				cMapGenerate map(vWorldSize.x, vWorldSize.y);
+				if (map.bFoliageExists)
+				{
+					m_vWorld[(int)x*(int)y] = map.iTileType;
+				}
 				DrawFlippedDecal(x, y, vWorld.x, vWorld.y, vCell.x, vCell.y, fAngle, fFlip_X, fFlip_Y);
 			}
 		}
@@ -611,19 +621,27 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	// Convert selector interface cell coordinate to world space
 	//olc::vi2d vSelectedInterfaceAreaTiles = InterfaceToScreenTiles(vSelectedInterfaceCell.x, vSelectedInterfaceCell.y);
 
+	// Handle pan & zoom
+	if (GetMouse(2).bHeld) tv.UpdatePan(vSelectedWorld);
+	if (GetMouse(2).bReleased) tv.EndPan(vSelectedWorld), vOrigin = vCell;
+	if (GetKey(olc::PGDN).bPressed) tv.ZoomAtScreenPos(2.0f, GetMousePos());
+	if (GetKey(olc::PGUP).bPressed) tv.ZoomAtScreenPos(0.5f, GetMousePos());
+
 	// Draw "highlight" tile
-	if (bInWorldBounds == true)
+	//if (bInWorldBounds == true)
 		//DrawPartialSprite(vSelectedWorld.x, vSelectedWorld.y, sprIsom, 1 * vTileSize.x, vTileSize.y, vTileSize.x, vTileSize.y, iSelectedCells);
 		DrawPartialDecal({ (float)vSelectedWorld.x, (float)vSelectedWorld.y }, dclIsom, { (float)1 * vTileSize.x, (float)vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y }, { (float)iSelectedCells, (float)iSelectedCells });
 
 	// Draw Debug Info - '+' here is operator overloading (string concatenation) 
-	DrawString(4, 4, "Mouse   : " + std::to_string(vMouse.x) + ", " + std::to_string(vMouse.y), olc::BLACK);
-	DrawString(4, 14, "Cell    : " + std::to_string(vCell.x) + ", " + std::to_string(vCell.y), olc::BLACK);
-	DrawString(4, 24, "Selected: " + std::to_string(vSelected.x) + ", " + std::to_string(vSelected.y), olc::BLACK);
-	DrawString(4, 34, "World size: " + std::to_string(vWorldSize.x) + ", " + std::to_string(vWorldSize.y), olc::BLACK);
-	DrawString(4, 44, "In world bounds: " + std::to_string(bInWorldBounds), olc::BLACK);
-	DrawString(4, 64, "iSelectedBaseTile: " + std::to_string(iSelectedBaseTile) + ", iSelectedObject: " + std::to_string(iSelectedObject) , olc::BLACK);
-	DrawString(4, 74, "vObjectSelectorOrigin: " + std::to_string(vObjectSelectorOrigin.x) + ";" + std::to_string(vObjectSelectorOrigin.y), olc::BLACK);
+	DrawString(4, 24, "Mouse   : " + std::to_string(vMouse.x) + ", " + std::to_string(vMouse.y), olc::BLACK);
+	DrawString(4, 34, "Cell    : " + std::to_string(vCell.x) + ", " + std::to_string(vCell.y), olc::BLACK);
+	DrawString(4, 44, "Selected: " + std::to_string(vSelected.x) + ", " + std::to_string(vSelected.y), olc::BLACK);
+	DrawString(4, 54, "World size: " + std::to_string(vWorldSize.x) + ", " + std::to_string(vWorldSize.y), olc::BLACK);
+	DrawString(4, 64, "In world bounds: " + std::to_string(bInWorldBounds), olc::BLACK);
+	DrawString(4, 74, "iSelectedBaseTile: " + std::to_string(iSelectedBaseTile) + ", iSelectedObject: " + std::to_string(iSelectedObject) , olc::BLACK);
+	DrawString(4, 84, "vSelectedWorld: " + std::to_string(vSelectedWorld.x) + ";" + std::to_string(vSelectedWorld.y), olc::BLACK);
+	DrawString(4, 94, "vOrigin: " + std::to_string(vOrigin.x) + ";" + std::to_string(vOrigin.y), olc::BLACK);
+	//DrawString(4, 104, "vNewOrigin: " + std::to_string(vNewOrigin.x) + ";" + std::to_string(vNewOrigin.y), olc::BLACK);
 
 // O------------------------------------------------------------------------------O
 // | Interface																	  |
@@ -818,6 +836,5 @@ int main()
 	MapEditor demo;
 	if (demo.Construct(1440, 750, 1, 1, 0)) // Remainder for ScreenHeight() * 25 (vTileSize.y) must equal to 0, or at the edge of the screen a cell will be cut off.  
 		demo.Start();
-
 	return 0;
 }

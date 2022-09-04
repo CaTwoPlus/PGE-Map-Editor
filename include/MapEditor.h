@@ -9,6 +9,8 @@
 #include "olcPGEX_TransformedView.h"
 
 #include <random>
+#include <Windows.h>
+#include <shobjidl.h> 
 
 class MapEditor : public olc::PixelGameEngine
 {
@@ -48,7 +50,6 @@ class MapEditor : public olc::PixelGameEngine
 		olc::vi2d vWorldSize;
 		olc::vi2d vTileSize;
 		olc::vi2d vOrigin;
-		olc::vi2d vObjectSelectorOrigin;
 		olc::vi2d vSelected;
 		olc::vi2d vSelectedInterfaceCell;
 
@@ -124,6 +125,8 @@ class MapEditor : public olc::PixelGameEngine
 		bool LoadMapData();
 		bool OnUserCreate() override;
 		bool OnUserUpdate(float fElapsedTime) override;
+
+		int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow);
 
 		void DrawUI(void);
 		void MainMenu();
