@@ -133,4 +133,40 @@ class MapEditor : public olc::PixelGameEngine
 		void FileMenu();
 };
 
+struct Tile : public MapEditor
+{
+	enum TileType
+	{
+		TILE_TYPE_EMPTY,
+		TILE_TYPE_DIRT,
+		TILE_TYPE_GRASS,
+		TILE_TYPE_LONG_GRASS,
+		TILE_TYPE_WATER,
+		TILE_TYPE_STONE,
+		TILE_TYPE_NR_ITEMS = 5 //should always be last 
+	};
+	olc::vi2d vSize;
+	float fAngle;
+	float fFlip_X;
+	float fFlip_Y;
+	bool bFlipped;
+
+	struct Object {
+		enum Objects
+		{
+			OBJ_TYPE_EMPTY,
+			OBJ_TYPE_BROWN_ROCK = TILE_TYPE_NR_ITEMS + 1,
+			OBJ_TYPE_YELLOW_FLOWERS = TILE_TYPE_NR_ITEMS + 2,
+			OBJ_TYPE_TREE_TRUNK = TILE_TYPE_NR_ITEMS + 3,
+			OBJ_TYPE_TREE = TILE_TYPE_NR_ITEMS + 4,
+			OBJ_TYPE_SIGNPOST = TILE_TYPE_NR_ITEMS + 5,
+			OBJ_TYPE_NR_ITEMS = 4
+		};
+		olc::vi2d vSize;
+		float fAngle;
+		float fFlip_X;
+		float fFlip_Y;
+		bool bFlipped;
+	};
+};
 #endif

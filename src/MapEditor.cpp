@@ -8,7 +8,7 @@
 MapEditor::MapEditor() : pge_imgui(true)
 {
 	sAppName = "Map Editor";
-
+	
 	// Number of tiles in world
 	vWorldSize = { 5, 5 };
 	iNewWorldSizeX = vWorldSize.x, iNewWorldSizeY = vWorldSize.y;
@@ -110,8 +110,8 @@ bool MapEditor::OnUserCreate()
 	vImageSize = { 345, 200 };
 
 	// Create empty world
-	m_vWorld.resize((long long)vWorldSize.x * vWorldSize.y), m_vWorld = { 0 };
-	m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y), m_vObjects = { 0 };
+	m_vWorld.resize((long long)vWorldSize.x * vWorldSize.y, 0);
+	m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y, 0);
 
 	// For ImGui
 	bOpen = true;
@@ -618,10 +618,12 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 // | Interface																	  |
 // O------------------------------------------------------------------------------O
 
+	//Itt tartottam: imgui.cpp ->  IM_ASSERT((g.IO.DeltaTime > 0.0f || g.FrameCount == 0)              && "Need a positive DeltaTime!");
 	ImGui::ShowDemoWindow();
+	
 	// For debugging
-	//ImGui::ShowStackToolWindow(); 
-	if (!ImGui::Begin("Tile selector", &bOpen, ImGuiWindowFlags_AlwaysAutoResize))
+	ImGui::ShowStackToolWindow(); 
+	if (ImGui::Begin("Tile selector", &bOpen, ImGuiWindowFlags_AlwaysAutoResize))
 		ImGui::End();
 	// UV naming convention: from 0 -> inf; 1st tile is uv0-uv2, 2nd uv1-uv3...
 	// Vector for storing UV coordinates
@@ -632,7 +634,7 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 	ImVec2 size = ImVec2((float)vTileSize.x, (float)vTileSize.y);
 	ImVec2 sizeObj = ImVec2((float)vTileSize.x / 2.0f, (float)vTileSize.y);
 
-// Tiles and object selector UI
+	// Tiles and object selector UI
 	// Tiles 
 	// UV coordinates for starting pixels ([0.0,0.0] is upper-left), i.e. draw FROM
 	ImVec2 uv0 = ImVec2(0.0f, 0.0f); TileUVs.push_back(uv0);
@@ -678,11 +680,10 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 		ImGui::PopID();
 		ImGui::SameLine();
 	}
-	//Itt  tartottam - heap corruption in xmemory
 	if (bInWorldBounds && (GetMouse(0).bPressed))
 		TileSelector(iSelectedBaseTile, iSelectedObject);
-	/*ImGui::NewLine();
-	for (int i = 0; i < UVs.size(); i += 2)
+	ImGui::NewLine();
+	/*for (int i = 0; i < UVs.size(); i += 2)
 	{
 		ImGui::Text("uvf = (%f, %f)", UVs[i].x, UVs[i].y);
 		ImGui::Text("uvt = (%f, %f)", UVs[i + 1].x, UVs[1 + 1].y);
@@ -829,6 +830,7 @@ int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
 	MapEditor demo;
+	Tile tile;
 	if (demo.Construct(1440, 750, 1, 1, 0)) // Remainder for ScreenHeight() * 25 (vTileSize.y) must equal to 0, or at the edge of the screen a cell will be cut off.  
 		demo.Start();
 	return 0;
