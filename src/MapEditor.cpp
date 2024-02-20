@@ -619,6 +619,7 @@ bool MapEditor::OnUserUpdate(float fElapsedTime)
 // O------------------------------------------------------------------------------O
 
 	//Itt tartottam: imgui.cpp ->  IM_ASSERT((g.IO.DeltaTime > 0.0f || g.FrameCount == 0)              && "Need a positive DeltaTime!");
+	//https://discord.com/channels/380484403458998276/380798602265493505/881277058095939585
 	ImGui::ShowDemoWindow();
 	
 	// For debugging
@@ -831,7 +832,7 @@ int main()
 	_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
 	MapEditor demo;
 	Tile tile;
-	if (demo.Construct(1440, 750, 1, 1, 0)) // Remainder for ScreenHeight() * 25 (vTileSize.y) must equal to 0, or at the edge of the screen a cell will be cut off.  
+	if (demo.Construct(1440, 750, 1, 1, false, true)) // Remainder for ScreenHeight() * 25 (vTileSize.y) must equal to 0, or at the edge of the screen a cell will be cut off.  
 		demo.Start();
 	return 0;
 }

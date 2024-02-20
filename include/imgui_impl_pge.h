@@ -494,7 +494,10 @@ namespace olc
 
 			io.DisplaySize = ImVec2((float)windowSize.x, (float)windowSize.y);
 
+			//Dirty fix for olc_CoreUpdate returning 0.0000000000
 			io.DeltaTime = pge->GetElapsedTime();
+			if (io.DeltaTime == 0.0000000000)
+				io.DeltaTime = 0.0000000001;
 
 			ImGui_ImplPGE_UpdateKeys();
 
