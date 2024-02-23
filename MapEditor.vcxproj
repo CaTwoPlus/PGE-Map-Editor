@@ -162,7 +162,6 @@
   <ItemGroup>
     <ClInclude Include="imgui_impl_pge_test.h" />
     <ClInclude Include="include\imconfig.h" />
-    <ClInclude Include="include\MapEditor.h" />
     <ClInclude Include="include\olcPGEX_TransformedView.h" />
     <ClInclude Include="include\olcPixelGameEngine.h" />
   </ItemGroup>
@@ -173,7 +172,7 @@
     <ClCompile Include="src\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\imgui_tables.cpp" />
     <ClCompile Include="src\imgui_widgets.cpp" />
-    <ClCompile Include="src\MapEditor.cpp" />
+    <ClCompile Include="MapEditor.cpp" />
     <ClCompile Include="TransformedViewTest.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
