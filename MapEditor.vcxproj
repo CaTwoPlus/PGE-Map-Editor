@@ -161,11 +161,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="imgui_impl_pge_test.h" />
+    <ClInclude Include="include\config.h" />
+    <ClInclude Include="include\game_map.h" />
     <ClInclude Include="include\imconfig.h" />
     <ClInclude Include="include\olcPGEX_TransformedView.h" />
     <ClInclude Include="include\olcPixelGameEngine.h" />
+    <ClInclude Include="include\rng.h" />
+    <ClInclude Include="include\room.h" />
+    <ClInclude Include="include\util.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\game_map.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />
     <ClCompile Include="src\imgui_draw.cpp" />
@@ -173,6 +179,9 @@
     <ClCompile Include="src\imgui_tables.cpp" />
     <ClCompile Include="src\imgui_widgets.cpp" />
     <ClCompile Include="MapEditor.cpp" />
+    <ClCompile Include="src\rng.cpp" />
+    <ClCompile Include="src\room.cpp" />
+    <ClCompile Include="src\util.cpp" />
     <ClCompile Include="TransformedViewTest.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

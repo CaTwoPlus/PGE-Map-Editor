@@ -10,6 +10,10 @@
 #include <random>
 #include <Windows.h>
 #include <shobjidl.h> 
+#include "game_map.h"
+#include "config.h"
+#include "room.h"
+#include "util.h"
 
 class MapEditor : public olc::PixelGameEngine
 {
@@ -19,43 +23,29 @@ class MapEditor : public olc::PixelGameEngine
 		MapEditor() : pge_imgui(true)
 		{
 			sAppName = "Example";
-
-			// Number of tiles in world
 			vWorldSize = { 5, 5 };
 			iNewWorldSizeX = vWorldSize.x, iNewWorldSizeY = vWorldSize.y;
-			// Size of single tile graphic
 			vTileSize = { 48, 25 };
-
 			iSelectedCells = 1;
 			iNumberOfTiles = Tile::TILE_TYPE_NR_ITEMS;
-
 			iLayerEditor = 0;
 			iLayerTop = 2;
 			iLayerBackground = 1;
-
 			// Where to place worldmap tile (0 ; 0) on screen (in tile size steps)
 			vOrigin = { 5, 1 };
-			// Location of test map 
 			sFileData = { "./maps/test_map.csv" };
 			// Sprite object that holds all imagery
 			sprIsom = nullptr;
-			// Flag for wrldspace bounds checking 
 			bInWorldBounds = false;
-			// Flag for loading/saving map
 			bLoadMap = false;
-			// Flag for checking if tile is selected 
 			bLeftMouseClicked = false;
-			// Flag for checking if map is loaded in 
 			bIsMapLoaded = false;
-
 			bBrushSizeIncr = false;
 			bBrushSizeDecr = false;
 			bFlipped = false;
-
 			fAngle = 0.0f;
 			fFlip_X = 1.0f;
 			fFlip_Y = 1.0f;
-
 			iSelectedTile = 0;
 			iSelectedObject = 0;
 		}
@@ -105,14 +95,12 @@ class MapEditor : public olc::PixelGameEngine
 		olc::vi2d vOrigin;
 		olc::vi2d vSelected;
 		olc::vi2d vSelectedInterfaceCell;
-
 		olc::vi2d vPosTileTypeEmpty = { 0, 0 };
 		olc::vi2d vPosTileType1;
 		olc::vi2d vPosTileType2;
 		olc::vi2d vPosTileType3;
 		olc::vi2d vPosTileType4;
 		olc::vi2d vPosTileType5;
-
 		olc::vi2d vPosObjTypeEmpty = { 0, 0 };
 		olc::vi2d vPosObjType1;
 		olc::vi2d vPosObjType2;
@@ -136,6 +124,7 @@ class MapEditor : public olc::PixelGameEngine
 		std::vector<int> m_vCellRotationTemp;
 		std::vector<int> m_vTileSelector;
 		std::vector<int> m_vObjectSelector;
+		std::vector<int> m_vMapGenTiles;
 		//int* i_pTileSelector;
 		//int* i_pObjectSelector;
 
@@ -147,7 +136,6 @@ class MapEditor : public olc::PixelGameEngine
 		int iSelectedCells;
 		int iNumberOfTiles;
 		int iNumberOfObjects;
-
 		int iLayerEditor;
 		int iLayerBackground;
 		int iLayerTop;
@@ -172,49 +160,7 @@ class MapEditor : public olc::PixelGameEngine
 		bool bNewWorldToCreate;
 
 	public:
-		class cMapGenerate
-		{
-		public:
-			cMapGenerate(uint32_t x, uint32_t y)
-			{
-				nLehmer = (x & 0xFFFF) << 16 | (y & 0xFFFF); //16 bit coordinate resolution on each axis. Increase if bigger map is needed. 
-
-				bFoliageExists = (RndInt(0, 10) == 0);
-				if (!bFoliageExists) return;
-
-				//If exists, determine the foliage type, and object type on it 
-				iTileType = RndInt(2, 5);
-				//iObjectType = RndInt(1, 4);
-			}
-		public:
-			bool bFoliageExists = true;
-			int iLayerNumber = 0;
-			int iTileType = MapEditor::Tile::TILE_TYPE_DIRT;
-			int iObjectType = MapEditor::Tile::Object::OBJ_TYPE_EMPTY;
-
-		public:
-			uint32_t nLehmer = 0;
-			uint32_t Lehmer32() //Random number generation
-			{
-				nLehmer += 0xe120fc15;
-				uint64_t tmp;
-				tmp = (uint64_t)nLehmer * 0x4a39b70d;
-				uint32_t m1 = (tmp >> 32) ^ tmp;
-				tmp = (uint64_t)m1 * 0x12fad5c9;
-				uint32_t m2 = (tmp >> 32) ^ tmp;
-				return m2;
-			}
-
-			int RndInt(int min, int max) //Return random int
-			{
-				return (Lehmer32() % (max - min)) + min;
-			}
-
-			double RndDouble(double min, double max) //Return random double
-			{
-				return ((double)Lehmer32() / double(0x7FFFFFFF)) * (max - min) + min;
-			}
-		};
+		GameMap* game_map;
 
 	public:
 		void TileSelector(int iSelectedBaseTile, int iSelectedObject)
@@ -416,56 +362,36 @@ class MapEditor : public olc::PixelGameEngine
 
 				// UV naming convention: from 0 -> inf; 1st tile is uv0-uv2, 2nd uv1-uv3...
 				// Vector for storing UV coordinates
-				std::vector<ImVec2> UVs;
-				// -1 == uses default padding (style.FramePadding)
-				int frame_padding = -1;
-				// Size of the image we want to make visible
+				std::vector<ImVec2> UVs = {
+					// UV coordinates for starting pixels ([0.0,0.0] is upper-left), i.e. draw FROM
+					ImVec2(0.0f, 0.0f), 
+					// UV coordinates for tiles in our image file, i.e. draw TO 
+					ImVec2((float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y),
+					ImVec2((float)vTileSize.x / (float)vImageSize.x, 0.0f),
+					ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y),
+					ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f),
+					ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y)
+				};
 				ImVec2 size = ImVec2((float)vTileSize.x, (float)vTileSize.y);
 
-				// UV coordinates for starting pixels ([0.0,0.0] is upper-left), i.e. draw FROM
-				ImVec2 uv0 = ImVec2(0.0f, 0.0f);
-				// UV coordinates for tiles in our image file, i.e. draw TO 
-				ImVec2 uv1 = ImVec2((float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv1);
-
-				ImVec2 uv2 = ImVec2((float)vTileSize.x / (float)vImageSize.x, 0.0f); UVs.push_back(uv2);
-				ImVec2 uv3 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv3);
-
-				ImVec2 uv4 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); UVs.push_back(uv4);
-				ImVec2 uv5 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); UVs.push_back(uv5);
-
 				if (ImGui::Button("Empty", size))
-					iSelectedBaseTile = 0;
+					iSelectedBaseTile = MapEditor::Tile::TILE_TYPE_EMPTY;
 
-				for (int i = 0; i < UVs.size(); i++)
+				//Imgui "PushID/PopID or TreeNode/TreePop Mismatch!" exception
+				for (int i = 1; i < UVs.size(); i++)
 				{
 					ImGui::PushID(i);
-					if (i + 1 >= UVs.size())
-						break;
+					// -1 == uses default padding (style.FramePadding)
+					int frame_padding = -1;
+					// Size of the image we want to make visible
+					ImVec2 size = ImVec2((float)vTileSize.x, (float)vTileSize.y);
 
-
-					switch (i)
-					{
-					case 1:
-						uv0 = uv1;
-						break;
-					case 2:
-						uv0 = uv2;
-						break;
-					case 3:
-						uv0 = uv3;
-						break;
-					case 4:
-						uv0 = uv4;
-						break;
-					default:
-						break;
-					}
-
-					if (ImGui::ImageButton((void*)(intptr_t)dclIsom->id, size, uv0, UVs[i]))
-						iSelectedBaseTile = i + 1;
+					if (ImGui::ImageButton((void*)(intptr_t)dclIsom->id, size, UVs[0], UVs[i]))
+						m_vMapGenTiles.push_back(i);
 					ImGui::PopID();
 					ImGui::SameLine();
 				}
+
 				ImGui::NewLine();
 				if (ImGui::Button("Create"))
 				{
@@ -508,7 +434,37 @@ class MapEditor : public olc::PixelGameEngine
 			//This finishes the Dear ImGui and renders it to the screen
 			pge_imgui.ImGui_ImplPGE_Render();
 		}
-		
+
+		std::vector<int> convert2DTo1D(const std::vector<std::vector<char>>& input) {
+			std::vector<int> output;
+
+			for (const auto& row : input) {
+				for (char character : row) {
+					int value = character - '0';
+					output.push_back(value);
+				}
+			}
+
+			return output;
+		}
+
+		std::vector<std::vector<char>> convert1DTo2D(const std::vector<int>& input, int rows, int cols) {
+			std::vector<std::vector<char>> output(rows, std::vector<char>(cols, '1'));
+
+			for (int i = 0; i < rows * cols && i < input.size(); ++i) {
+				// Map integer to character (ASCII representation)
+				char character = static_cast<char>(input[i]);
+
+				// Determine 2D indices
+				int row = i / cols;
+				int col = i % cols;
+
+				// Assign character to the 2D vector
+				output[row][col] = character;
+			}
+
+			return output;
+		}
 
 	public:
 		bool OnUserCreate() override
@@ -526,12 +482,11 @@ class MapEditor : public olc::PixelGameEngine
 			// Create empty world
 			m_vWorld.resize((long long)vWorldSize.x * vWorldSize.y);
 			m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
+			// Create array to store rotational state of cells 
+			m_vCellRotation.resize((long long)vWorldSize.x * vWorldSize.y);
 
 			// For ImGui
 			bOpen = true;
-
-			// Create array to store rotational state of cells 
-			m_vCellRotation.resize((long long)vWorldSize.x * vWorldSize.y);
 
 			// Order of layers: editor (foreground) -> top -> base (background)
 			iLayerEditor = CreateLayer();
@@ -602,16 +557,7 @@ class MapEditor : public olc::PixelGameEngine
 
 			// Is selected tile within world space
 			if (vSelected.x >= 0 && vSelected.x < vWorldSize.x && vSelected.y >= 0 && vSelected.y < vWorldSize.y)
-			{
 				bInWorldBounds = true;
-				/*
-				if (vSelected.x >= 0 && vSelected.x < vWorldSize.x && vSelected.x >= 0 && vSelected.y < vWorldSize.y)
-				{
-					m_vObjects[vSelected.y * vWorldSize.x + vSelected.x] = *m_vObjectSelector;
-					m_vWorld[vSelected.y * vWorldSize.x + vSelected.x] = *m_vTileSelector;
-					m_vCellRotation[vSelected.y * vWorldSize.x + vSelected.x] = bFlipped;
-				}*/
-			}
 			else
 				bInWorldBounds = false;
 
@@ -670,6 +616,7 @@ class MapEditor : public olc::PixelGameEngine
 			};
 
 			// Change world map size on key press
+			/*
 			if (GetKey(olc::UP).bPressed)
 			{
 				int iCurrentTile = m_vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = m_vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
@@ -693,85 +640,29 @@ class MapEditor : public olc::PixelGameEngine
 				int iCurrentTile = m_vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = m_vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
 				--vWorldSize.x;
 				for (int i = 0; i < vWorldSize.y; i++) m_vWorld.push_back(iCurrentTile), m_vObjects.push_back(0), m_vCellRotation.push_back(iCurrentRotation);
-			}
+			}*/
 
 			// Draw World - has binary transperancy so enable masking
 			olc::PixelGameEngine::SetPixelMode(olc::Pixel::MASK);
 
-			// Draw map data or draw new map
-			if (bLoadMap == true || bNewWorldToCreate == true)
+			// Genereate new map
+			if (bNewWorldToCreate)
 			{
-				if (bNewWorldToCreate)
-				{
-					vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY, m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
-					m_vWorld.assign((long long)vWorldSize.x * vWorldSize.y, iSelectedBaseTile), bNewWorldToCreate = false;
-				}
-
-				/*
-				for (int y = 0; y < vWorldSize.y; y++)
-				{
-					for (int x = 0; x < vWorldSize.x; x++)
-					{
-						// Convert cell coordinate to world space
-						olc::vi2d vWorld = ToScreen(vCell.x, vCell.y);
-
-						for (int n = 0; n < vWorldSize.x * vWorldSize.y; n++)
-						{
-							switch (m_vObjects[n])
-							{
-							case OBJ_TYPE_BROWN_ROCK:
-								tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-								break;
-							case OBJ_TYPE_YELLOW_FLOWERS:
-								tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-								break;
-							case OBJ_TYPE_TREE_TRUNK:
-								tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-								break;
-							case OBJ_TYPE_TREE:
-								tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-								break;
-							case OBJ_TYPE_SIGNPOST:
-								tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-								break;
-							}
-
-
-							cMapGenerate map(vWorldSize.x, vWorldSize.y);
-							if (map.bFoliageExists) //Draw the map here with existing tiles
-							{
-								m_vWorld[n] = map.iTileType;
-								switch (m_vWorld[n])
-								{
-								case TILE_TYPE_DIRT:
-									tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-									break;
-								case TILE_TYPE_GRASS:
-									tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-									break;
-								case TILE_TYPE_LONG_GRASS:
-									tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-									break;
-								case TILE_TYPE_WATER:
-									tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-									break;
-								case TILE_TYPE_STONE:
-									tv.DrawDecal({ (float)vWorld.x, (float)vWorld.y }, dclIsom);
-									break;
-								}
-							}
-
-						}
-					}
-				}
-				*/
-				bIsMapLoaded = true, bLoadMap = false, iSelectedBaseTile = 0, iSelectedObject = 0;
+				vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY; 
+				m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y), m_vWorld.resize((long long)vWorldSize.x* vWorldSize.y), m_vCellRotation.resize((long long)vWorldSize.x* vWorldSize.y);
+				// Current world vector is 1D, but map generator works with 2 dimensions
+				std::vector<std::vector<char>> convertedMap = convert1DTo2D(m_vWorld, vWorldSize.x, vWorldSize.y);
+				game_map = new GameMap((int)vWorldSize.x, (int)vWorldSize.y, kMapFillPercentage, (int)vTileSize.x, (int)vTileSize.y, convertedMap);
+				game_map->ProcessMap();
+				m_vWorld = convert2DTo1D(game_map->char_map_);
+				//m_vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iSelectedBaseTile);
+				bNewWorldToCreate = false, bIsMapLoaded = true, bLoadMap = false, iSelectedBaseTile = 0, iSelectedObject = 0;
 			}
 
 			// Main for loop for tile rendering 
 			// (0,0) is at top, defined by vOrigin, so draw from top to bottom
 			// to ensure tiles closest to camera are drawn last
-			if (bIsMapLoaded == true || bNewWorldToCreate == false)
+			if (bIsMapLoaded || !bNewWorldToCreate)
 			{
 				for (int y = 0; y < vWorldSize.y; y++)
 				{
@@ -779,11 +670,10 @@ class MapEditor : public olc::PixelGameEngine
 					{
 						// Convert cell coordinate to world space
 						olc::vi2d vWorld = ToScreen(x, y);
-						cMapGenerate map(vWorldSize.x, vWorldSize.y);
-						if (map.bFoliageExists)
+						/*if (map.bFoliageExists)
 						{
 							m_vWorld[(int)x * (int)y] = map.iTileType;
-						}
+						}*/
 						DrawFlippedDecal(x, y, vWorld.x, vWorld.y, vCell.x, vCell.y, fAngle, fFlip_X, fFlip_Y);
 					}
 				}
@@ -822,13 +712,17 @@ class MapEditor : public olc::PixelGameEngine
 
 					}
 				}
-				if (vSelected.x >= 0 && vSelected.x < vWorldSize.x && vSelected.x >= 0 && vSelected.y < vWorldSize.y)
+				// Currently causes "vector subscript out of range" error
+				// Still gives error, but only bigger maps
+				if (vSelected.x >= 0 && vSelected.x < vWorldSize.x && vSelected.y >= 0 && vSelected.y < vWorldSize.y 
+					&& (olc::PixelGameEngine::GetMouse(0).bPressed || olc::PixelGameEngine::GetMouse(0).bHeld))
 				{
 					if (m_vObjectSelector.size() > 0)
-						m_vObjects[vSelected.y * (long long)vWorldSize.x + vSelected.x] = m_vObjectSelector[0];
-					if (m_vTileSelector.size() > 0 && (olc::PixelGameEngine::GetMouse(0).bPressed || olc::PixelGameEngine::GetMouse(0).bHeld))
-						m_vWorld[vSelected.y * (long long)vWorldSize.x + vSelected.x] = m_vTileSelector[0];
-					m_vCellRotation[vSelected.y * (long long)vWorldSize.x + vSelected.x] = bFlipped;
+						m_vObjects[vSelected.y * vWorldSize.x + vSelected.x] = m_vObjectSelector[0];
+					if (m_vTileSelector.size() > 0) {
+						m_vWorld[vSelected.y * vWorldSize.x + vSelected.x] = m_vTileSelector[0];
+						m_vCellRotation[vSelected.y * vWorldSize.x + vSelected.x] = bFlipped;
+					}
 				}
 			}
 
@@ -870,37 +764,39 @@ class MapEditor : public olc::PixelGameEngine
 			// For debugging
 			//ImGui::ShowStackToolWindow();
 			if (ImGui::Begin("Tile selector", &bOpen, ImGuiWindowFlags_AlwaysAutoResize)) {
-				// UV naming convention: from 0 -> inf; 1st tile is uv0-uv2, 2nd uv1-uv3...
-				// Vector for storing UV coordinates
-				std::vector<ImVec2> TileUVs, ObjUVs;
 				// -1 == uses default padding (style.FramePadding)
 				int frame_padding = -1;
 				// Size of the image we want to make visible
 				ImVec2 size = ImVec2((float)vTileSize.x, (float)vTileSize.y);
 				ImVec2 sizeObj = ImVec2((float)vTileSize.x / 2.0f, (float)vTileSize.y);
 
+				// Vectors for storing UV coordinates
 				// Tiles and object selector UI
 				// Tiles 
-				// UV coordinates for starting pixels ([0.0,0.0] is upper-left), i.e. draw FROM
-				ImVec2 uv0 = ImVec2(0.0f, 0.0f); TileUVs.push_back(uv0);
-				// UV coordinates for tiles in our image file, i.e. draw TO 
-				ImVec2 uv1 = ImVec2((float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); TileUVs.push_back(uv1);
-
-				ImVec2 uv2 = ImVec2((float)vTileSize.x / (float)vImageSize.x, 0.0f); TileUVs.push_back(uv2);
-				ImVec2 uv3 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); TileUVs.push_back(uv3);
-
-				ImVec2 uv4 = ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f); TileUVs.push_back(uv4);
-				ImVec2 uv5 = ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y); TileUVs.push_back(uv5);
+				std::vector<ImVec2> TileUVs = {
+					// UV coordinates for starting pixels ([0.0,0.0] is upper-left), i.e. draw FROM
+					ImVec2(0.0f, 0.0f),
+					// UV coordinates for tiles in our image file, i.e. draw TO 
+					ImVec2((float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y),
+					ImVec2((float)vTileSize.x / (float)vImageSize.x, 0.0f),
+					ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y),
+					ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f),
+					ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y),
+				};
 
 				// Objects
-				//tv.DrawPartialDecal({ (float)vWorld_X,  (float)vWorld_Y }, dclIsom, { 0.0f, (float)5.24f * vTileSize.y }, { (float)vTileSize.x, (float)(1.24f * vTileSize.y) });
-				ImVec2 uvobj0 = ImVec2(0.0f, (3.0f * (float)vTileSize.y) / (float)vImageSize.y); ObjUVs.push_back(uvobj0);
-				ImVec2 uvobj1 = ImVec2(((float)vTileSize.x / 2) / (float)vImageSize.x, (4.0f * (float)vTileSize.y) / (float)vImageSize.y); ObjUVs.push_back(uvobj1);
+				std::vector<ImVec2> ObjUVs = {
+					//tv.DrawPartialDecal({ (float)vWorld_X,  (float)vWorld_Y }, dclIsom, { 0.0f, (float)5.24f * vTileSize.y }, { (float)vTileSize.x, (float)(1.24f * vTileSize.y) });
+					ImVec2(0.0f, (3.0f * (float)vTileSize.y) / (float)vImageSize.y),
+					ImVec2(((float)vTileSize.x / 2) / (float)vImageSize.x, (4.0f * (float)vTileSize.y) / (float)vImageSize.y)
+				};
 
 				int iTempTileSelection, iTempObjectSelection;
 
 				for (int i = 0; i < TileUVs.size(); i += 2)
 				{
+					if (i + 1 >= TileUVs.size())
+						break;
 					ImGui::PushID(i);
 					if (ImGui::ImageButton((void*)(intptr_t)dclIsom->id, size, TileUVs[i], TileUVs[i + 1]))
 					{
@@ -914,6 +810,8 @@ class MapEditor : public olc::PixelGameEngine
 				}
 				for (int i = 0; i < ObjUVs.size(); i += 2)
 				{
+					if (i + 1 >= ObjUVs.size())
+						break;
 					ImGui::PushID(i);
 					if (ImGui::ImageButton((void*)(intptr_t)dclIsom->id, sizeObj, ObjUVs[i], ObjUVs[i + 1]));
 					{
@@ -943,7 +841,7 @@ class MapEditor : public olc::PixelGameEngine
 int main()
 {
 	MapEditor demo;
-	if (demo.Construct(1440, 750, 1, 1, false, true))
+	if (demo.Construct(1440, 750, 1, 1, false))
 		demo.Start();
 
 	return 0;
