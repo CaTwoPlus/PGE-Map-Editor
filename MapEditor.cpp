@@ -10,6 +10,7 @@
 #include <random>
 #include <Windows.h>
 #include <shobjidl.h> 
+#include <numeric>
 #include "game_map.h"
 #include "config.h"
 #include "room.h"
@@ -43,12 +44,16 @@ class MapEditor : public olc::PixelGameEngine
 			bBrushSizeIncr = false;
 			bBrushSizeDecr = false;
 			bFlipped = false;
+			bDistributionPlotted = false;
 			fAngle = 0.0f;
 			fFlip_X = 1.0f;
 			fFlip_Y = 1.0f;
-			iSelectedTile = 0;
-			iSelectedObject = 0;
+			iGeneratorTile = 0;
+			iTileSelectorObject = 0;
+			iPMax = 0;
+			iPMin = 0;
 		}
+
 
 	public:
 		struct Tile
@@ -116,30 +121,48 @@ class MapEditor : public olc::PixelGameEngine
 		olc::TileTransformedView tv;
 		olc::TransformedView tv1;
 
-		std::vector<int> m_vWorld; // Tiles are the foundation
-		std::vector<int> m_vWorldTemp;
-		std::vector<int> m_vObjects;
-		std::vector<int> m_vObjectsTemp;
-		std::vector<int> m_vCellRotation;
-		std::vector<int> m_vCellRotationTemp;
-		std::vector<int> m_vTileSelector;
-		std::vector<int> m_vObjectSelector;
-		std::vector<int> m_vMapGenTiles;
+		std::vector<int> vWorld; // Tiles are the foundation
+		std::vector<int> vWorldTemp;
+		std::vector<int> vObjects;
+		std::vector<int> vObjectsTemp;
+		std::vector<int> vCellRotation;
+		std::vector<int> vCellRotationTemp;
+		std::vector<int> vTileSelector;
+		std::vector<int> vObjectSelector;
+		std::vector<int> vMapGenTiles;
+		std::map<int, int> mDistribution;
+		std::map<MapEditor::Tile::TileType, int*> mProbabilitySliders;
 		//int* i_pTileSelector;
 		//int* i_pObjectSelector;
 
 		int iNewWorldSizeX;
 		int iNewWorldSizeY;
-		int iSelectedBaseTile;
-		int iSelectedTile;
-		int iSelectedObject;
+		int iTileSelectorTile;
+		int iGeneratorTile;
+		int iGeneratorEmptyTile;
+		int iTileSelectorObject;
 		int iSelectedCells;
 		int iNumberOfTiles;
+		int iRandomizerNumberOfTiles;
 		int iNumberOfObjects;
 		int iLayerEditor;
 		int iLayerBackground;
 		int iLayerTop;
+		int iPMax;
+		int iPMin;
 		int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow);
+
+		int iPMaxSlider1 = 0;
+		int iPMaxSlider2 = 0;
+		int iPMaxSlider3 = 0;
+		int iPMaxSlider4 = 0;
+		int iPMaxSlider5 = 0;
+
+		int* pPMaxSlider1 = &iPMaxSlider1;
+		int* pPMaxSlider2 = &iPMaxSlider2;
+		int* pPMaxSlider3 = &iPMaxSlider3;
+		int* pPMaxSlider4 = &iPMaxSlider4;
+		int* pPMaxSlider5 = &iPMaxSlider5;
 
 		float fAngle;
 		float fFlip_X;
@@ -158,58 +181,59 @@ class MapEditor : public olc::PixelGameEngine
 		bool bFlipped;
 		bool bNewWorldCreation;
 		bool bNewWorldToCreate;
+		bool bDistributionPlotted;
 
 	public:
 		GameMap* game_map;
 
 	public:
-		void TileSelector(int iSelectedBaseTile, int iSelectedObject)
+		void TileSelector(int iTileSelectorTile, int iTileSelectorObject)
 		{
-			m_vTileSelector.clear();
-			switch (iSelectedBaseTile)
+			vTileSelector.clear();
+			switch (iTileSelectorTile)
 			{
 			case 0:
-				m_vTileSelector.push_back(Tile::TILE_TYPE_EMPTY);
+				vTileSelector.push_back(Tile::TILE_TYPE_EMPTY);
 				break;
 			case 1:
-				m_vTileSelector.push_back(Tile::TILE_TYPE_DIRT);
+				vTileSelector.push_back(Tile::TILE_TYPE_DIRT);
 				break;
 			case 2:
-				m_vTileSelector.push_back(Tile::TILE_TYPE_GRASS);
+				vTileSelector.push_back(Tile::TILE_TYPE_GRASS);
 				break;
 			case 3:
-				m_vTileSelector.push_back(Tile::TILE_TYPE_LONG_GRASS);
+				vTileSelector.push_back(Tile::TILE_TYPE_LONG_GRASS);
 				break;
 			case 4:
-				m_vTileSelector.push_back(Tile::TILE_TYPE_WATER);
+				vTileSelector.push_back(Tile::TILE_TYPE_WATER);
 				break;
 			case 5:
-				m_vTileSelector.push_back(Tile::TILE_TYPE_STONE);
+				vTileSelector.push_back(Tile::TILE_TYPE_STONE);
 				break;
 			default:
 				break;
 			}
 
-			m_vObjectSelector.clear();
-			switch (iSelectedObject)
+			vObjectSelector.clear();
+			switch (iTileSelectorObject)
 			{
 			case 0:
-				m_vObjectSelector.push_back(Tile::Object::OBJ_TYPE_EMPTY);
+				vObjectSelector.push_back(Tile::Object::OBJ_TYPE_EMPTY);
 				break;
 			case 1:
-				m_vObjectSelector.push_back(Tile::Object::OBJ_TYPE_BROWN_ROCK);
+				vObjectSelector.push_back(Tile::Object::OBJ_TYPE_BROWN_ROCK);
 				break;
 			case 2:
-				m_vObjectSelector.push_back(Tile::Object::OBJ_TYPE_YELLOW_FLOWERS);
+				vObjectSelector.push_back(Tile::Object::OBJ_TYPE_YELLOW_FLOWERS);
 				break;
 			case 3:
-				m_vObjectSelector.push_back(Tile::Object::OBJ_TYPE_TREE_TRUNK);
+				vObjectSelector.push_back(Tile::Object::OBJ_TYPE_TREE_TRUNK);
 				break;
 			case 4:
-				m_vObjectSelector.push_back(Tile::Object::OBJ_TYPE_TREE);
+				vObjectSelector.push_back(Tile::Object::OBJ_TYPE_TREE);
 				break;
 			case 5:
-				m_vObjectSelector.push_back(Tile::Object::OBJ_TYPE_SIGNPOST);
+				vObjectSelector.push_back(Tile::Object::OBJ_TYPE_SIGNPOST);
 				break;
 			default:
 				break;
@@ -222,7 +246,7 @@ class MapEditor : public olc::PixelGameEngine
 			MapData.open(sFileData);
 			MapData << vWorldSize.x << "\n" << vWorldSize.y << "\n";
 			for (int i = 0; i < vWorldSize.x * vWorldSize.y; i++)
-				MapData << m_vWorld[i] << "\n" << m_vObjects[i] << "\n";
+				MapData << vWorld[i] << "\n" << vObjects[i] << "\n";
 			MapData.close();
 		}
 
@@ -232,14 +256,14 @@ class MapEditor : public olc::PixelGameEngine
 			if (MapData.is_open())
 			{
 				MapData >> vWorldSize.x >> vWorldSize.y;
-				m_vWorld.resize((long long)vWorldSize.x * vWorldSize.y);
-				m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
-				m_vCellRotation.resize((long long)vWorldSize.x * vWorldSize.y);
+				vWorld.resize((long long)vWorldSize.x * vWorldSize.y);
+				vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
+				vCellRotation.resize((long long)vWorldSize.x * vWorldSize.y);
 				while (!MapData.eof())
 				{
 					int tempwrld, tempobject, temprotation;
 					MapData >> tempwrld >> tempobject >> temprotation;
-					m_vWorld.push_back(tempwrld), m_vObjects.push_back(tempobject), m_vCellRotation.push_back(temprotation);
+					vWorld.push_back(tempwrld), vObjects.push_back(tempobject), vCellRotation.push_back(temprotation);
 				}
 				return true;
 			}
@@ -248,78 +272,209 @@ class MapEditor : public olc::PixelGameEngine
 
 		void DrawFlippedDecal(int WorldSizeIndex_X, int WorldSizeIndex_Y, int32_t vWorld_X, int32_t vWorld_Y, int32_t vCenter_X, int32_t vCenter_Y, float fAngle, float fFlip_X, float fFlip_Y)
 		{
-			switch (m_vObjects[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
+			switch (vObjects[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
 			{
 				SetDrawTarget(iLayerTop);
-			case Tile::Object::OBJ_TYPE_BROWN_ROCK:
-				switch (m_vCellRotation[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
-				{
-				case 0:
-					//DrawPartialSprite(vWorld_X + (0.25 * vTileSize.x), vWorld.y - (0.25 * vTileSize.y), sprIsom, 0, 3 * vTileSize.y, 0.5 * vTileSize.x, vTileSize.y, 0, fScale_X);
-					tv.DrawPartialDecal({ (float)vWorld_X,  (float)vWorld_Y }, dclIsom, { 0.0f, (float)5.24f * vTileSize.y }, { (float)vTileSize.x, (float)(1.24f * vTileSize.y) });
-					break;
+				case Tile::Object::OBJ_TYPE_BROWN_ROCK:
+					switch (vCellRotation[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
+					{
+					case 0:
+						//DrawPartialSprite(vWorld_X + (0.25 * vTileSize.x), vWorld.y - (0.25 * vTileSize.y), sprIsom, 0, 3 * vTileSize.y, 0.5 * vTileSize.x, vTileSize.y, 0, fScale_X);
+						tv.DrawPartialDecal({ (float)vWorld_X,  (float)vWorld_Y }, dclIsom, { 0.0f, (float)5.24f * vTileSize.y }, { (float)vTileSize.x, (float)(1.24f * vTileSize.y) });
+						break;
 
-				case 1:
-					fFlip_X = -0.9f;
-					tv.DrawPartialDecal({ (float)vWorld_X + (float)(0.25 * vTileSize.x),  (float)vWorld_Y - (float)(0.25 * vTileSize.y) }, dclIsom,
-						{ 0.0f, (float)5.0f * vTileSize.y }, { (float)vTileSize.x, (float)(1.24f * vTileSize.y) }, { fFlip_X, fFlip_Y });
+					case 1:
+						fFlip_X = -0.9f;
+						tv.DrawPartialDecal({ (float)vWorld_X + (float)(0.25 * vTileSize.x),  (float)vWorld_Y - (float)(0.25 * vTileSize.y) }, dclIsom,
+							{ 0.0f, (float)5.0f * vTileSize.y }, { (float)vTileSize.x, (float)(1.24f * vTileSize.y) }, { fFlip_X, fFlip_Y });
+						break;
+					}
 					break;
-				}
-				break;
-			case Tile::Object::OBJ_TYPE_YELLOW_FLOWERS:
-				switch (m_vCellRotation[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
-				{
-				case 0:
-					tv.DrawPartialDecal({ ((float)vWorld_X + 0.25f * vTileSize.x), ((float)vWorld_Y - 0.125f * vTileSize.y) }, dclIsom, { (float)1.5f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
+				case Tile::Object::OBJ_TYPE_YELLOW_FLOWERS:
+					switch (vCellRotation[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
+					{
+					case 0:
+						tv.DrawPartialDecal({ ((float)vWorld_X + 0.25f * vTileSize.x), ((float)vWorld_Y - 0.125f * vTileSize.y) }, dclIsom, { (float)1.5f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
+						break;
+					case 1:
+						fFlip_X = -0.9f;
+						tv.DrawPartialDecal({ ((float)vWorld_X + 0.25f * vTileSize.x), ((float)vWorld_Y + 0.5f * vTileSize.y) }, dclIsom, { (float)1.5f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y }, { fFlip_X, fFlip_Y });
+						break;
+					}
 					break;
-				case 1:
-					fFlip_X = -0.9f;
-					tv.DrawPartialDecal({ ((float)vWorld_X + 0.25f * vTileSize.x), ((float)vWorld_Y + 0.5f * vTileSize.y) }, dclIsom, { (float)1.5f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y }, { fFlip_X, fFlip_Y });
+				case Tile::Object::OBJ_TYPE_TREE_TRUNK:
+					switch (vCellRotation[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
+					{
+					case 0:
+						tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom, { (float)1.0f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
+						break;
+					case 1:
+						fFlip_X = -0.9f;
+						tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom, { (float)1.0f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y }, { fFlip_X, fFlip_Y });
+						break;
+					}
 					break;
-				}
-				break;
-			case Tile::Object::OBJ_TYPE_TREE_TRUNK:
-				switch (m_vCellRotation[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
-				{
-				case 0:
-					tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom, { (float)1.0f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y });
+				case Tile::Object::OBJ_TYPE_TREE:
+					tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y - ((float)2 * vTileSize.y) }, dclIsom,
+						{ (float)2 * vTileSize.x, (float)vTileSize.y }, { (float)vTileSize.x, (float)3 * vTileSize.y });
 					break;
-				case 1:
-					fFlip_X = -0.9f;
-					tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom, { (float)1.0f * vTileSize.x, (float)3.0f * vTileSize.y }, { (float)0.5f * vTileSize.x, (float)vTileSize.y }, { fFlip_X, fFlip_Y });
+				default:
 					break;
-				}
-				break;
-			case Tile::Object::OBJ_TYPE_TREE:
-				tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y - ((float)2 * vTileSize.y) }, dclIsom,
-					{ (float)2 * vTileSize.x, (float)vTileSize.y }, { (float)vTileSize.x, (float)3 * vTileSize.y });
-				break;
 			}
 
-			switch (m_vWorld[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
+			switch (vWorld[WorldSizeIndex_Y * (long long)vWorldSize.x + WorldSizeIndex_X])
 			{
-				SetDrawTarget(iLayerBackground);
-			case Tile::TILE_TYPE_DIRT:
-				tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
-					{ 0, 0 }, { (float)vTileSize.x, (float)vTileSize.y });
-				break;
-			case Tile::TILE_TYPE_GRASS:
-				tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
-					{ (float)vTileSize.x, 0 }, { (float)vTileSize.x, (float)vTileSize.y });
-				break;
-			case Tile::TILE_TYPE_LONG_GRASS:
-				tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
-					{ (float)vTileSize.x, (float)2 * vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y });
-				break;
-			case Tile::TILE_TYPE_WATER:
-				tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
-					{ 0, (float)vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y });
-				break;
-			case Tile::TILE_TYPE_STONE:
-				tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
-					{ (float)2 * vTileSize.x, 0 }, { (float)vTileSize.x, (float)vTileSize.y });
-				break;
+					SetDrawTarget(iLayerBackground);
+				case Tile::TILE_TYPE_DIRT:
+					tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
+						{ 0, 0 }, { (float)vTileSize.x, (float)vTileSize.y });
+					break;
+				case Tile::TILE_TYPE_GRASS:
+					tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
+						{ (float)vTileSize.x, 0 }, { (float)vTileSize.x, (float)vTileSize.y });
+					break;
+				case Tile::TILE_TYPE_LONG_GRASS:
+					tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
+						{ (float)vTileSize.x, (float)2 * vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y });
+					break;
+				case Tile::TILE_TYPE_WATER:
+					tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
+						{ 0, (float)vTileSize.y }, { (float)vTileSize.x, (float)vTileSize.y });
+					break;
+				case Tile::TILE_TYPE_STONE:
+					tv.DrawPartialDecal({ (float)vWorld_X, (float)vWorld_Y }, dclIsom,
+						{ (float)2 * vTileSize.x, 0 }, { (float)vTileSize.x, (float)vTileSize.y });
+					break;
+				default:
+					break;
 			}
+		}
+
+		void RandomizeCells() {
+			if (!bDistributionPlotted)
+				RandomizeTile();
+
+			for (int i = 0; i < vWorld.size(); ++i) {
+				if (vWorld[i] == 0)
+					vWorld[i] = iGeneratorEmptyTile;
+				else {
+					findPMax();
+					if (iPMax != iPMin) {
+						vWorld[i] = equalizeDistribution();
+					} else {
+						RandomizeTile();
+						vWorld[i] = equalizeDistribution();
+					}
+				}
+			}
+		}
+
+		void findPMax() {
+			auto maxElement = std::max_element(mDistribution.begin(), mDistribution.end(),
+				[](const std::pair<int, int>& a, const std::pair<int, int>& b) {
+					return a.second < b.second;
+				});
+			if (maxElement != mDistribution.end()) {
+				iPMax = maxElement->second;
+			}
+		}
+
+		void findPMin() {
+			auto minElement = std::min_element(mDistribution.begin(), mDistribution.end(),
+				[](const std::pair<int, int>& a, const std::pair<int, int>& b) {
+					return a.second < b.second;
+				});
+			if (minElement != mDistribution.end()) {
+				iPMin = minElement->second;
+			}
+		}
+
+		// nRolls: number of experiments - higher number for more precision
+		// nChance number of "chances" for a tile to appear
+		void RandomizeTile(int nRolls = 10000, int nChance = 100, double variability = 4.0) {  
+			const int nNumberOfTiles = vMapGenTiles.size(); // how many tile types to distribute
+
+			// Determine the range of vMapGenTiles
+			int minTile = *std::min_element(vMapGenTiles.begin(), vMapGenTiles.end());
+			int maxTile = *std::max_element(vMapGenTiles.begin(), vMapGenTiles.end());
+
+			// Adjust mean and standard deviation for normal distribution
+			double mean = (minTile + maxTile) / 2.0;
+			double sigma = std::max((maxTile - minTile) / variability, 0.1);
+
+			std::default_random_engine generator(std::random_device{}());
+			std::normal_distribution<double> distribution(mean, sigma); // mean, sigma
+
+			// Initialize map with keys from vMapGenTiles and values set to 0
+			for (const int& tile : vMapGenTiles) {
+				mDistribution[tile] = 0;
+			}
+
+			// Populate the map based on random number generation
+			for (int i = 0; i < nRolls; ++i) {
+				double number = distribution(generator);
+				int key = std::round(number); // Use round to get nearest integer
+				if (key >= minTile && key <= maxTile) {
+					if (mDistribution.find(key) != mDistribution.end()) {
+						++mDistribution[key];
+					}
+				}
+			}
+
+			// Normalize the values in the map
+			for (auto& pair : mDistribution) {
+				pair.second = pair.second * nChance / nRolls;
+			}
+
+			findPMax();
+			findPMin();
+		}
+
+		int equalizeDistribution() {
+			int tile_type = -1;
+			for (auto& p : mDistribution) {
+				if (p.second == iPMax) {
+					tile_type = p.first;
+					--p.second;
+					break;
+				}
+			}
+			if (tile_type != -1) {
+				findPMax();
+				findPMin();
+			}
+			return tile_type;
+		}
+
+		std::vector<int> convert2DTo1D(const std::vector<std::vector<char>>& input) {
+			std::vector<int> output;
+
+			for (const auto& row : input) {
+				for (char character : row) {
+					int value = character - '0';
+					output.push_back(value);
+				}
+			}
+
+			return output;
+		}
+
+		std::vector<std::vector<char>> convert1DTo2D(const std::vector<int>& input, int rows, int cols) {
+			std::vector<std::vector<char>> output(rows, std::vector<char>(cols, '1'));
+
+			for (int i = 0; i < rows * cols && i < input.size(); ++i) {
+				// Map integer to character (ASCII representation)
+				char character = static_cast<char>(input[i]);
+
+				// Determine 2D indices
+				int row = i / cols;
+				int col = i % cols;
+
+				// Assign character to the 2D vector
+				output[row][col] = character;
+			}
+
+			return output;
 		}
 
 		void MainMenu()
@@ -358,40 +513,182 @@ class MapEditor : public olc::PixelGameEngine
 			{
 				ImGui::InputInt("Size of x axis", &iNewWorldSizeX);
 				ImGui::InputInt("Size of y axis", &iNewWorldSizeY);
-				ImGui::TextWrapped("Choose base tile type:");
+
+				static int toggleTile = 0;
+
+				ImGui::RadioButton("Tile", &toggleTile, 1);
+				ImGui::SameLine();
+				ImGui::RadioButton("Empty tile", &toggleTile, 0);
 
 				// UV naming convention: from 0 -> inf; 1st tile is uv0-uv2, 2nd uv1-uv3...
-				// Vector for storing UV coordinates
+				// Order is following TileType's ordering
 				std::vector<ImVec2> UVs = {
 					// UV coordinates for starting pixels ([0.0,0.0] is upper-left), i.e. draw FROM
-					ImVec2(0.0f, 0.0f), 
+					ImVec2(0.0f, 0.0f),
 					// UV coordinates for tiles in our image file, i.e. draw TO 
 					ImVec2((float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y),
+
 					ImVec2((float)vTileSize.x / (float)vImageSize.x, 0.0f),
-					ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y),
-					ImVec2((2.0f * (float)vTileSize.x) / (float)vImageSize.x, 0.0f),
-					ImVec2((3.0f * (float)vTileSize.x) / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y)
+					ImVec2(2.0f * (float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y),
+
+					ImVec2((float)vTileSize.x / (float)vImageSize.x, 2.0f * (float)vTileSize.y / (float)vImageSize.y),
+					ImVec2(2.0f * (float)vTileSize.x / (float)vImageSize.x, 3.0f * (float)vTileSize.y / (float)vImageSize.y),
+
+					ImVec2(0.0f, (float)vTileSize.y / (float)vImageSize.y),
+					ImVec2((float)vTileSize.x / (float)vImageSize.x, 2.0f * (float)vTileSize.y / (float)vImageSize.y),
+
+					ImVec2(2.0f * (float)vTileSize.x / (float)vImageSize.x, 0.0f),
+					ImVec2(3.0f * (float)vTileSize.x / (float)vImageSize.x, (float)vTileSize.y / (float)vImageSize.y),
+
 				};
 				ImVec2 size = ImVec2((float)vTileSize.x, (float)vTileSize.y);
-
-				if (ImGui::Button("Empty", size))
-					iSelectedBaseTile = MapEditor::Tile::TILE_TYPE_EMPTY;
-
-				//Imgui "PushID/PopID or TreeNode/TreePop Mismatch!" exception
-				for (int i = 1; i < UVs.size(); i++)
+				if (ImGui::Button("Empty", size)) {
+					if (toggleTile == 1)
+						vMapGenTiles.push_back(MapEditor::Tile::TILE_TYPE_EMPTY);
+					else
+						iGeneratorEmptyTile = MapEditor::Tile::TILE_TYPE_EMPTY;
+				}
+				for (int i = 0; i < UVs.size(); i += 2)
 				{
 					ImGui::PushID(i);
-					// -1 == uses default padding (style.FramePadding)
-					int frame_padding = -1;
-					// Size of the image we want to make visible
-					ImVec2 size = ImVec2((float)vTileSize.x, (float)vTileSize.y);
-
-					if (ImGui::ImageButton((void*)(intptr_t)dclIsom->id, size, UVs[0], UVs[i]))
-						m_vMapGenTiles.push_back(i);
+					if (i + 1 < UVs.size() && ImGui::ImageButton((void*)(intptr_t)dclIsom->id, size, UVs[i], UVs[i + 1], -1)) {
+						if (i == 0) {
+							if (toggleTile == 1 && std::find(vMapGenTiles.begin(), vMapGenTiles.end(), Tile::TILE_TYPE_DIRT) == vMapGenTiles.end())
+								vMapGenTiles.push_back(Tile::TILE_TYPE_DIRT);
+							else
+								iGeneratorEmptyTile = Tile::TILE_TYPE_DIRT;
+						}
+						else {
+							switch (i / 2)
+							{
+							case 1:
+								if (toggleTile == 1 && std::find(vMapGenTiles.begin(), vMapGenTiles.end(), Tile::TILE_TYPE_GRASS) == vMapGenTiles.end())
+									vMapGenTiles.push_back(Tile::TILE_TYPE_GRASS);
+								else
+									iGeneratorEmptyTile = Tile::TILE_TYPE_GRASS;
+								break;
+							case 2:
+								if (toggleTile == 1 && std::find(vMapGenTiles.begin(), vMapGenTiles.end(), Tile::TILE_TYPE_LONG_GRASS) == vMapGenTiles.end())
+									vMapGenTiles.push_back(Tile::TILE_TYPE_LONG_GRASS);
+								else
+									iGeneratorEmptyTile = Tile::TILE_TYPE_LONG_GRASS;
+								break;
+							case 3:
+								if (toggleTile == 1 && std::find(vMapGenTiles.begin(), vMapGenTiles.end(), Tile::TILE_TYPE_WATER) == vMapGenTiles.end())
+									vMapGenTiles.push_back(Tile::TILE_TYPE_WATER);
+								else
+									iGeneratorEmptyTile = Tile::TILE_TYPE_WATER;
+								break;
+							case 4:
+								if (toggleTile == 1 && std::find(vMapGenTiles.begin(), vMapGenTiles.end(), Tile::TILE_TYPE_STONE) == vMapGenTiles.end())
+									vMapGenTiles.push_back(Tile::TILE_TYPE_STONE);
+								else
+									iGeneratorEmptyTile = Tile::TILE_TYPE_STONE;
+								break;
+							default:
+								break;
+							}
+						}
+					}
 					ImGui::PopID();
 					ImGui::SameLine();
 				}
+				ImGui::NewLine();
 
+				// Counter for initial distribution value assigment to sliders
+				static int j = 0;
+
+				if (ImGui::Button("Plot distribution") && vMapGenTiles.size() > 0) {
+					bDistributionPlotted = true;
+					if (j != 0)
+						j = 0;
+					RandomizeTile();
+				}
+				if (bDistributionPlotted) {
+					ImGui::NewLine();
+
+					int i = 0;
+					float* values = new float[mDistribution.size()];
+
+					for (auto const& pair : mDistribution) {
+						values[i] = static_cast<float>(pair.second);
+						++i;
+					}
+
+					ImGui::PlotHistogram("", values, mDistribution.size(), 0, NULL, (float)iPMin, (float)iPMax, ImVec2(0, 80.0f));
+
+					// Lambda function for ceiling the sum of tile occourence rates
+					auto adjustSliders = [&]() {
+						int sum = *pPMaxSlider1 + *pPMaxSlider2 + *pPMaxSlider3 + *pPMaxSlider4 + *pPMaxSlider5;
+						if (sum > 100) {
+							float scaleFactor = 100.0f / sum;
+							*pPMaxSlider1 = static_cast<int>(*pPMaxSlider1 * scaleFactor);
+							*pPMaxSlider2 = static_cast<int>(*pPMaxSlider2 * scaleFactor);
+							*pPMaxSlider3 = static_cast<int>(*pPMaxSlider3 * scaleFactor);
+							*pPMaxSlider4 = static_cast<int>(*pPMaxSlider4 * scaleFactor);
+							*pPMaxSlider5 = static_cast<int>(*pPMaxSlider5 * scaleFactor);
+							return true;
+						}
+						return false;
+					};
+
+					for (auto& pair : mDistribution) {
+						if (pair.first == Tile::TILE_TYPE_DIRT) {
+							if (j == 0) { *pPMaxSlider1 = pair.second; }
+							if (ImGui::SliderInt("Dirst", pPMaxSlider1, 0, 100)) {
+								pair.second = *pPMaxSlider1;
+							}
+						}
+						if (pair.first == Tile::TILE_TYPE_GRASS) {
+							if (j == 0) { *pPMaxSlider2 = pair.second; }
+							if (ImGui::SliderInt("Grass", pPMaxSlider2, 0, 100)) {
+								pair.second = *pPMaxSlider2;
+							}
+						}
+						if (pair.first == Tile::TILE_TYPE_LONG_GRASS) {
+							if (j == 0) { *pPMaxSlider3 = pair.second; }
+							if (ImGui::SliderInt("Long grass", pPMaxSlider3, 0, 100)) {
+								pair.second = *pPMaxSlider3;
+							}
+						}
+						if (pair.first == Tile::TILE_TYPE_WATER) {
+							if (j == 0) { *pPMaxSlider4 = pair.second; }
+							if (ImGui::SliderInt("Water", pPMaxSlider4, 0, 100)) {
+								pair.second = *pPMaxSlider4;
+							}
+						}
+						if (pair.first == Tile::TILE_TYPE_STONE) {
+							if (j == 0) { *pPMaxSlider5 = pair.second; }
+							if (ImGui::SliderInt("Stone", pPMaxSlider5, 0, 100)) {
+								pair.second = *pPMaxSlider5;
+							}
+						}
+					}
+					adjustSliders();
+
+					// After adjusting the sliders, update the map values
+					for (auto& pair : mDistribution) {
+						switch (pair.first) {
+						case Tile::TILE_TYPE_DIRT:
+							pair.second = *pPMaxSlider1;
+							break;
+						case Tile::TILE_TYPE_GRASS:
+							pair.second = *pPMaxSlider2;
+							break;
+						case Tile::TILE_TYPE_LONG_GRASS:
+							pair.second = *pPMaxSlider3;
+							break;
+						case Tile::TILE_TYPE_WATER:
+							pair.second = *pPMaxSlider4;
+							break;
+						case Tile::TILE_TYPE_STONE:
+							pair.second = *pPMaxSlider5;
+							break;
+						}
+					}
+
+					++j;
+				}
 				ImGui::NewLine();
 				if (ImGui::Button("Create"))
 				{
@@ -399,8 +696,18 @@ class MapEditor : public olc::PixelGameEngine
 					bNewWorldToCreate = true;
 				}
 				ImGui::SameLine();
-				if (ImGui::Button("Cancel"))
+				if (ImGui::Button("Cancel")) {
+					iGeneratorEmptyTile = 0;
+					iPMaxSlider1 = 0;
+					iPMaxSlider2 = 0;
+					iPMaxSlider3 = 0;
+					iPMaxSlider4 = 0;
+					iPMaxSlider5 = 0;
+					vMapGenTiles.erase(vMapGenTiles.begin(), vMapGenTiles.end());
+					mDistribution.erase(mDistribution.begin(), mDistribution.end());
+					bDistributionPlotted = false;
 					ImGui::CloseCurrentPopup();
+				}
 				ImGui::EndPopup();
 			}
 		}
@@ -428,42 +735,11 @@ class MapEditor : public olc::PixelGameEngine
 			}
 			if (ImGui::MenuItem("Save", "Ctrl+S")) { SaveMapData(); }
 		}
-
+		
 		void DrawUI(void)
 		{
 			//This finishes the Dear ImGui and renders it to the screen
 			pge_imgui.ImGui_ImplPGE_Render();
-		}
-
-		std::vector<int> convert2DTo1D(const std::vector<std::vector<char>>& input) {
-			std::vector<int> output;
-
-			for (const auto& row : input) {
-				for (char character : row) {
-					int value = character - '0';
-					output.push_back(value);
-				}
-			}
-
-			return output;
-		}
-
-		std::vector<std::vector<char>> convert1DTo2D(const std::vector<int>& input, int rows, int cols) {
-			std::vector<std::vector<char>> output(rows, std::vector<char>(cols, '1'));
-
-			for (int i = 0; i < rows * cols && i < input.size(); ++i) {
-				// Map integer to character (ASCII representation)
-				char character = static_cast<char>(input[i]);
-
-				// Determine 2D indices
-				int row = i / cols;
-				int col = i % cols;
-
-				// Assign character to the 2D vector
-				output[row][col] = character;
-			}
-
-			return output;
 		}
 
 	public:
@@ -480,10 +756,10 @@ class MapEditor : public olc::PixelGameEngine
 			vImageSize = { 345, 200 };
 
 			// Create empty world
-			m_vWorld.resize((long long)vWorldSize.x * vWorldSize.y);
-			m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
+			vWorld.resize((long long)vWorldSize.x * vWorldSize.y);
+			vObjects.resize((long long)vWorldSize.x * vWorldSize.y);
 			// Create array to store rotational state of cells 
-			m_vCellRotation.resize((long long)vWorldSize.x * vWorldSize.y);
+			vCellRotation.resize((long long)vWorldSize.x * vWorldSize.y);
 
 			// For ImGui
 			bOpen = true;
@@ -556,6 +832,7 @@ class MapEditor : public olc::PixelGameEngine
 			olc::vi2d vOffset = { vMouse.x % vTileSize.x, vMouse.y % vTileSize.x };
 
 			// Is selected tile within world space
+			// Itt tartottam - currently inaccurate 
 			if (vSelected.x >= 0 && vSelected.x < vWorldSize.x && vSelected.y >= 0 && vSelected.y < vWorldSize.y)
 				bInWorldBounds = true;
 			else
@@ -619,27 +896,27 @@ class MapEditor : public olc::PixelGameEngine
 			/*
 			if (GetKey(olc::UP).bPressed)
 			{
-				int iCurrentTile = m_vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = m_vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
+				int iCurrentTile = vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
 				++vWorldSize.y;
-				for (int i = 0; i < vWorldSize.x; i++) m_vWorld.push_back(iCurrentTile), m_vObjects.push_back(0), m_vCellRotation.push_back(iCurrentRotation);
+				for (int i = 0; i < vWorldSize.x; i++) vWorld.push_back(iCurrentTile), vObjects.push_back(0), vCellRotation.push_back(iCurrentRotation);
 			}
 			if (GetKey(olc::DOWN).bPressed && (vWorldSize.y > 1))
 			{
-				int iCurrentTile = m_vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = m_vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
+				int iCurrentTile = vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
 				--vWorldSize.y;
-				for (int i = 0; i < vWorldSize.x; i++) m_vWorld.push_back(iCurrentTile), m_vObjects.push_back(0), m_vCellRotation.push_back(iCurrentRotation);
+				for (int i = 0; i < vWorldSize.x; i++) vWorld.push_back(iCurrentTile), vObjects.push_back(0), vCellRotation.push_back(iCurrentRotation);
 			}
 			if (GetKey(olc::RIGHT).bPressed)
 			{
-				int iCurrentTile = m_vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = m_vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
+				int iCurrentTile = vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
 				++vWorldSize.x;
-				for (int i = 0; i < vWorldSize.y; i++) m_vWorld.push_back(iCurrentTile), m_vObjects.push_back(0), m_vCellRotation.push_back(iCurrentRotation);
+				for (int i = 0; i < vWorldSize.y; i++) vWorld.push_back(iCurrentTile), vObjects.push_back(0), vCellRotation.push_back(iCurrentRotation);
 			}
 			if (GetKey(olc::LEFT).bPressed && (vWorldSize.x > 1))
 			{
-				int iCurrentTile = m_vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = m_vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
+				int iCurrentTile = vWorld[((long long)vWorldSize.x * vWorldSize.y) - 1], iCurrentRotation = vCellRotation[((long long)vWorldSize.x * vWorldSize.y) - 1];
 				--vWorldSize.x;
-				for (int i = 0; i < vWorldSize.y; i++) m_vWorld.push_back(iCurrentTile), m_vObjects.push_back(0), m_vCellRotation.push_back(iCurrentRotation);
+				for (int i = 0; i < vWorldSize.y; i++) vWorld.push_back(iCurrentTile), vObjects.push_back(0), vCellRotation.push_back(iCurrentRotation);
 			}*/
 
 			// Draw World - has binary transperancy so enable masking
@@ -649,14 +926,15 @@ class MapEditor : public olc::PixelGameEngine
 			if (bNewWorldToCreate)
 			{
 				vWorldSize.x = iNewWorldSizeX, vWorldSize.y = iNewWorldSizeY; 
-				m_vObjects.resize((long long)vWorldSize.x * vWorldSize.y), m_vWorld.resize((long long)vWorldSize.x* vWorldSize.y), m_vCellRotation.resize((long long)vWorldSize.x* vWorldSize.y);
+				vObjects.resize((long long)vWorldSize.x * vWorldSize.y), vWorld.resize((long long)vWorldSize.x* vWorldSize.y), vCellRotation.resize((long long)vWorldSize.x* vWorldSize.y);
 				// Current world vector is 1D, but map generator works with 2 dimensions
-				std::vector<std::vector<char>> convertedMap = convert1DTo2D(m_vWorld, vWorldSize.x, vWorldSize.y);
+				std::vector<std::vector<char>> convertedMap = convert1DTo2D(vWorld, vWorldSize.x, vWorldSize.y);
 				game_map = new GameMap((int)vWorldSize.x, (int)vWorldSize.y, kMapFillPercentage, (int)vTileSize.x, (int)vTileSize.y, convertedMap);
 				game_map->ProcessMap();
-				m_vWorld = convert2DTo1D(game_map->char_map_);
-				//m_vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iSelectedBaseTile);
-				bNewWorldToCreate = false, bIsMapLoaded = true, bLoadMap = false, iSelectedBaseTile = 0, iSelectedObject = 0;
+				vWorld = convert2DTo1D(game_map->char_map_);
+				RandomizeCells();
+				//vWorld.assign((long long)vWorldSize.x* vWorldSize.y, iTileSelectorTile);
+				bNewWorldToCreate = false, bIsMapLoaded = true, bLoadMap = false, iTileSelectorTile = 0, iTileSelectorObject = 0;
 			}
 
 			// Main for loop for tile rendering 
@@ -672,7 +950,7 @@ class MapEditor : public olc::PixelGameEngine
 						olc::vi2d vWorld = ToScreen(x, y);
 						/*if (map.bFoliageExists)
 						{
-							m_vWorld[(int)x * (int)y] = map.iTileType;
+							vWorld[(int)x * (int)y] = map.iTileType;
 						}*/
 						DrawFlippedDecal(x, y, vWorld.x, vWorld.y, vCell.x, vCell.y, fAngle, fFlip_X, fFlip_Y);
 					}
@@ -712,16 +990,14 @@ class MapEditor : public olc::PixelGameEngine
 
 					}
 				}
-				// Currently causes "vector subscript out of range" error
-				// Still gives error, but only bigger maps
 				if (vSelected.x >= 0 && vSelected.x < vWorldSize.x && vSelected.y >= 0 && vSelected.y < vWorldSize.y 
 					&& (olc::PixelGameEngine::GetMouse(0).bPressed || olc::PixelGameEngine::GetMouse(0).bHeld))
 				{
-					if (m_vObjectSelector.size() > 0)
-						m_vObjects[vSelected.y * vWorldSize.x + vSelected.x] = m_vObjectSelector[0];
-					if (m_vTileSelector.size() > 0) {
-						m_vWorld[vSelected.y * vWorldSize.x + vSelected.x] = m_vTileSelector[0];
-						m_vCellRotation[vSelected.y * vWorldSize.x + vSelected.x] = bFlipped;
+					if (vObjectSelector.size() > 0)
+						vObjects[vSelected.y * vWorldSize.x + vSelected.x] = vObjectSelector[0];
+					if (vTileSelector.size() > 0) {
+						vWorld[vSelected.y * vWorldSize.x + vSelected.x] = vTileSelector[0];
+						vCellRotation[vSelected.y * vWorldSize.x + vSelected.x] = bFlipped;
 					}
 				}
 			}
@@ -751,7 +1027,7 @@ class MapEditor : public olc::PixelGameEngine
 			DrawString(4, 44, "Selected: " + std::to_string(vSelected.x) + ", " + std::to_string(vSelected.y), olc::BLACK);
 			DrawString(4, 54, "World size: " + std::to_string(vWorldSize.x) + ", " + std::to_string(vWorldSize.y), olc::BLACK);
 			DrawString(4, 64, "In world bounds: " + std::to_string(bInWorldBounds), olc::BLACK);
-			DrawString(4, 74, "iSelectedBaseTile: " + std::to_string(iSelectedBaseTile) + ", iSelectedObject: " + std::to_string(iSelectedObject), olc::BLACK);
+			DrawString(4, 74, "iTileSelectorTile: " + std::to_string(iTileSelectorTile) + ", iTileSelectorObject: " + std::to_string(iTileSelectorObject), olc::BLACK);
 			DrawString(4, 84, "vSelectedWorld: " + std::to_string(vSelectedWorld.x) + ";" + std::to_string(vSelectedWorld.y), olc::BLACK);
 			DrawString(4, 94, "vOrigin: " + std::to_string(vOrigin.x) + ";" + std::to_string(vOrigin.y), olc::BLACK);
 			//DrawString(4, 104, "vNewOrigin: " + std::to_string(vNewOrigin.x) + ";" + std::to_string(vNewOrigin.y), olc::BLACK);
@@ -760,7 +1036,7 @@ class MapEditor : public olc::PixelGameEngine
 		// | Interface																	  |
 		// O------------------------------------------------------------------------------O
 
-			//ImGui::ShowDemoWindow();
+			ImGui::ShowDemoWindow();
 			// For debugging
 			//ImGui::ShowStackToolWindow();
 			if (ImGui::Begin("Tile selector", &bOpen, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -801,9 +1077,9 @@ class MapEditor : public olc::PixelGameEngine
 					if (ImGui::ImageButton((void*)(intptr_t)dclIsom->id, size, TileUVs[i], TileUVs[i + 1]))
 					{
 						if (i == 0)
-							iSelectedBaseTile = 1;
+							iTileSelectorTile = 1;
 						else
-							iSelectedBaseTile = i; // Tile enums start from 0 (empty tile)!
+							iTileSelectorTile = i; // Tile enums start from 0 (empty tile)!
 					}
 					ImGui::PopID();
 					ImGui::SameLine();
@@ -816,15 +1092,15 @@ class MapEditor : public olc::PixelGameEngine
 					if (ImGui::ImageButton((void*)(intptr_t)dclIsom->id, sizeObj, ObjUVs[i], ObjUVs[i + 1]));
 					{
 						if (i == 0)
-							iSelectedObject = 1;
+							iTileSelectorObject = 1;
 						else
-							iSelectedObject = i; // Tile enums start from 0 (empty tile)!
+							iTileSelectorObject = i; // Tile enums start from 0 (empty tile)!
 					}
 					ImGui::PopID();
 					ImGui::SameLine();
 				}
 				if (bInWorldBounds && (GetMouse(0).bPressed))
-					TileSelector(iSelectedBaseTile, iSelectedObject);
+					TileSelector(iTileSelectorTile, iTileSelectorObject);
 				ImGui::NewLine();
 				/*for (int i = 0; i < UVs.size(); i += 2)
 				{
@@ -841,7 +1117,7 @@ class MapEditor : public olc::PixelGameEngine
 int main()
 {
 	MapEditor demo;
-	if (demo.Construct(1440, 750, 1, 1, false))
+	if (demo.Construct(1440, 750, 1, 1, 0, 1))
 		demo.Start();
 
 	return 0;

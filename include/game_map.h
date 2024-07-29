@@ -2,6 +2,8 @@
 #define GAME_MAP_H_
 
 #include <vector>
+#include <map>
+#include <charconv>
 
 class Room;
 class Node;
@@ -15,6 +17,7 @@ public:
     int tile_width_in_pixels_ = 0;
     int tile_height_in_pixels_ = 0;
     std::vector<Room *> room_vector_;
+    std::vector<int> place_holder;
 public:
     GameMap(int width, int height, int map_fill_percentage,
              int tile_width_in_pixels, int tile_height_in_pixels, std::vector<std::vector<char> > &map);

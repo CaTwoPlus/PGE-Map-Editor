@@ -1,14 +1,11 @@
 #include <vector>
 #include <iostream>
 
-
 #include "game_map.h"
 #include "rng.h"
 #include "room.h"
 #include "util.h"
 #include "config.h"
-
-
 
 GameMap::GameMap(int width, int height, int map_fill_percentage,
                    int tile_width_in_pixels, int tile_height_in_pixels, std::vector<std::vector<char>> &map):
@@ -26,6 +23,7 @@ GameMap::GameMap(int width, int height, int map_fill_percentage,
 void GameMap::Reset() {
     char_map_ = std::vector<std::vector<char> >(Width(), std::vector<char>(Height(), '1'));
 }
+
 
 void GameMap:: PrintMapToConsole() {
     std::cout << std::endl;
@@ -77,6 +75,7 @@ int GameMap::CountNeighborWalls(int i, int j) {
     }
     return cnt;
 }
+
 
 void GameMap::SmoothMap(int num_iterations) {
     for (int k = 0; k < num_iterations; ++k) {
