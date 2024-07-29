@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="TransformedViewTest.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="MapEditor.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui.cpp">
+      <Filter>Src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_demo.cpp">
+      <Filter>Src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_draw.cpp">
+      <Filter>Src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_impl_opengl3.cpp">
+      <Filter>Src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_tables.cpp">
+      <Filter>Src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_widgets.cpp">
+      <Filter>Src\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_map.cpp">
+      <Filter>Src\mapgen</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rng.cpp">
+      <Filter>Src\mapgen</Filter>
+    </ClCompile>
+    <ClCompile Include="src\room.cpp">
+      <Filter>Src\mapgen</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util.cpp">
+      <Filter>Src\mapgen</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\imconfig.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_impl_pge_test.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\olcPGEX_TransformedView.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\olcPixelGameEngine.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\config.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\game_map.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rng.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\room.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\util.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="MapEditor.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Include">
+      <UniqueIdentifier>{2a511e7d-85d9-4e31-9d75-c0f84c25f45a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src">
+      <UniqueIdentifier>{d28b70b3-ba00-4f8a-bc5e-c25332aa729c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\imgui">
+      <UniqueIdentifier>{731e573d-f7c8-4e3e-a119-a029790d91cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\mapgen">
+      <UniqueIdentifier>{6ceaeb6b-4708-4053-a767-ee72fefc2e91}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

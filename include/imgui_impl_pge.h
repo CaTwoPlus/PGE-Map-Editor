@@ -345,7 +345,7 @@ namespace olc
 			io.KeyMap[ImGuiKey_Space] = olc::SPACE;
 			io.KeyMap[ImGuiKey_Enter] = olc::ENTER;
 			io.KeyMap[ImGuiKey_Escape] = olc::ESCAPE;
-			io.KeyMap[ImGuiKey_KeyPadEnter] = olc::RETURN;
+			//io.KeyMap[ImGuiKey_KeyPadEnter] = olc::RETURN; -deprecated
 			io.KeyMap[ImGuiKey_A] = olc::A;
 			io.KeyMap[ImGuiKey_C] = olc::C;
 			io.KeyMap[ImGuiKey_V] = olc::V;
@@ -493,8 +493,6 @@ namespace olc
 			IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer back-end. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL2_NewFrame().");
 
 			io.DisplaySize = ImVec2((float)windowSize.x, (float)windowSize.y);
-
-			io.DeltaTime = pge->GetElapsedTime();
 
 			ImGui_ImplPGE_UpdateKeys();
 
